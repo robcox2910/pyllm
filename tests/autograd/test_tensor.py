@@ -38,8 +38,11 @@ def test_add_backward_passes_grad_to_both():
 
 
 def test_add_scalar_on_right():
-    out = Tensor([1.0, 2.0]) + 5.0
+    a = Tensor([1.0, 2.0])
+    out = a + 5.0
     assert out.data.tolist() == [6.0, 7.0]
+    out.backward()
+    assert a.grad.tolist() == [1.0, 1.0]
 
 
 def test_add_broadcasting_reduces_grad():

@@ -75,6 +75,10 @@ class Tensor:
                 topo.append(node)
 
         build(self)
+        # This is the root — the final answer we're asking "how much does it change?"
+        # The answer: by exactly 1 (the loss itself). We start the breadcrumb trail
+        # with ones here because it's the very beginning. Every other tensor will
+        # accumulate gradient with += because they may have been used in several places.
         self.grad = np.ones_like(self.data)
         # Walk backward: reverse topological order runs _backward closures.
         for node in reversed(topo):
