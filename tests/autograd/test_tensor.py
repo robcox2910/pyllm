@@ -72,3 +72,21 @@ def test_mul_backward_uses_other_operand():
 def test_mul_scalar_on_right():
     out = Tensor([2.0, 3.0]) * 10.0
     assert out.data.tolist() == [20.0, 30.0]
+
+
+def test_matmul_forward():
+    a = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    b = Tensor([[5.0, 6.0], [7.0, 8.0]])
+    out = a @ b
+    assert out.data.tolist() == [[19.0, 22.0], [43.0, 50.0]]
+
+
+def test_matmul_backward_shapes_and_values():
+    a = Tensor([[1.0, 2.0, 3.0]])      # (1, 3)
+    b = Tensor([[1.0], [1.0], [1.0]])  # (3, 1)
+    out = a @ b                         # (1, 1)
+    out.backward()
+    # d(a@b)/da = out.grad @ b.T ; with out.grad = ones((1,1)) -> b.T = [[1,1,1]]
+    assert a.grad.tolist() == [[1.0, 1.0, 1.0]]
+    # d(a@b)/db = a.T @ out.grad -> [[1],[2],[3]]
+    assert b.grad.tolist() == [[1.0], [2.0], [3.0]]

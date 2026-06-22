@@ -76,6 +76,24 @@ class Tensor:
         """Support scalar * Tensor (reverse operand order)."""
         return self * other
 
+    def __matmul__(self, other):
+        """Matrix multiply two tensors, building the compute graph.
+
+        The @ operator computes C = A @ B (matrix multiplication).
+        Gradients flow via:
+        - d(A@B)/dA = out.grad @ B^T
+        - d(A@B)/dB = A^T @ out.grad
+        where ^T means transpose the last two axes (swapaxes(-1, -2)).
+        """
+        out = Tensor(self.data @ other.data, (self, other), "@")
+
+        def _backward():
+            self.grad += out.grad @ other.data.swapaxes(-1, -2)
+            other.grad += self.data.swapaxes(-1, -2) @ out.grad
+
+        out._backward = _backward
+        return out
+
     def backward(self):
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
