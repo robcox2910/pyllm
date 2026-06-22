@@ -1,0 +1,63 @@
+[project]
+name = "pyllm"
+dynamic = ["version"]
+description = "An educational large language model built from scratch in Python"
+readme = "README.md"
+requires-python = ">=3.14"
+license = {text = "MIT"}
+authors = [{ name = "Rob Cox" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+keywords = ["llm", "gpt", "transformer", "autograd", "education", "learning"]
+dependencies = ["numpy>=2.1"]
+
+[project.urls]
+Homepage = "https://github.com/robcox2910/pyllm"
+Repository = "https://github.com/robcox2910/pyllm"
+Issues = "https://github.com/robcox2910/pyllm/issues"
+Documentation = "https://robcox2910.github.io/pyllm/"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.9.3",
+    "pre-commit>=4.0.1",
+    "pyright>=1.1.400",
+    "commitizen>=4.4.0",
+    "pip-audit>=2.10.0",
+]
+docs = ["mkdocs-material>=9.5"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/pyllm/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyllm"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
