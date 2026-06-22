@@ -101,6 +101,62 @@ class Tensor:
         """
         return self * other
 
+    def __neg__(self):
+        """Flip the sign, like owing money instead of having it.
+
+        Negation is just multiplication by -1, so gradients flow backward
+        with the negative sign automatically.
+        """
+        return self * -1.0
+
+    def __sub__(self, other):
+        """Take away — like removing coins from a pile.
+
+        Subtraction is built from addition and negation, so gradients
+        just reuse those paths: `a - b` becomes `a + (-b)`.
+        """
+        other = other if isinstance(other, Tensor) else Tensor(other)
+        return self + (-other)
+
+    def __rsub__(self, other):
+        """Support `scalar - Tensor` — called when the left side isn't a Tensor.
+
+        Flips the operation via negation: `c - t` becomes `(-t) + c`.
+        """
+        return (-self) + other
+
+    def __pow__(self, power):
+        """Repeated multiplication, e.g., squaring (x^2) or cubing (x^3).
+
+        The slope of x^n is n·x^(n-1), so exponentiation is the only new
+        primitive here; the gradient flows back via that power rule.
+        """
+        if not isinstance(power, (int, float)):
+            raise TypeError("Tensor ** power supports int/float exponents only")
+        out = Tensor(self.data ** power, (self,), f"**{power}")
+
+        def _backward():
+            self.grad += (power * self.data ** (power - 1)) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def __truediv__(self, other):
+        """Share into equal parts — like splitting a pizza among friends.
+
+        Division is built as multiply by the reciprocal: `a / b` becomes
+        `a * (b ^ -1)`, so gradients flow through multiplication and power.
+        """
+        other = other if isinstance(other, Tensor) else Tensor(other)
+        return self * (other ** -1)
+
+    def __rtruediv__(self, other):
+        """Support `scalar / Tensor` — called when the left side isn't a Tensor.
+
+        Reorders via power: `c / t` becomes `(t ^ -1) * c`.
+        """
+        return (self ** -1) * other
+
     def __matmul__(self, other):
         """Combine two tables of numbers — like running many recipes at once.
 

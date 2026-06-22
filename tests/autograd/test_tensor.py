@@ -143,3 +143,37 @@ def test_tanh_backward():
     out = a.tanh()
     out.backward()
     assert np.allclose(a.grad, [1.0])  # 1 - tanh(0)^2 = 1
+
+
+def test_neg_and_sub():
+    a = Tensor([5.0, 7.0])
+    b = Tensor([2.0, 3.0])
+    out = a - b
+    assert out.data.tolist() == [3.0, 4.0]
+    out.backward()
+    assert a.grad.tolist() == [1.0, 1.0]
+    assert b.grad.tolist() == [-1.0, -1.0]
+
+
+def test_pow_backward():
+    a = Tensor([2.0, 3.0])
+    out = a ** 2
+    assert out.data.tolist() == [4.0, 9.0]
+    out.backward()
+    assert a.grad.tolist() == [4.0, 6.0]  # d(x^2)/dx = 2x
+
+
+def test_truediv_backward():
+    a = Tensor([6.0])
+    b = Tensor([2.0])
+    out = a / b
+    assert out.data.tolist() == [3.0]
+    out.backward()
+    assert np.allclose(a.grad, [0.5])     # 1/b
+    assert np.allclose(b.grad, [-1.5])    # -a/b^2
+
+
+def test_rsub_and_rtruediv():
+    a = Tensor([2.0])
+    assert (10.0 - a).data.tolist() == [8.0]
+    assert (6.0 / a).data.tolist() == [3.0]
