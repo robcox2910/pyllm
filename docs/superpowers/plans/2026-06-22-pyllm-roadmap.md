@@ -12,7 +12,31 @@
 | 4 | **Pebble flagship** | `pebble/` program generator (random valid ASTs → pebble-lang formatter), corpus harvester, parser-based validity scorer; bundled Pebble corpus + checkpoint; `pyllm pebble` and `pyllm gen-corpus` CLI commands. |
 | 5 | **PyStack integration + docs polish** | Pebble `import "llm"` module (`llm_generate`, checkpoint/sampling helpers); PyLLM added as project #11 ("the brain") to PyStack; full `docs/concepts/` kid-friendly write-ups; README with example session + series table. |
 
-## Conventions enforced by every plan
+## RULE #1 — Child-friendly documentation about EVERYTHING
+
+**This is the single most important rule of the entire series, above all others.**
+Every module, every class, every function, and every concept must be explained so
+a curious 12-year-old can follow it, using real-world analogies. This is not a
+final polish step — it ships *with* each piece of code.
+
+Concretely, in every plan:
+
+- **Every public class/function gets a docstring written for a child** — what it
+  is, using an analogy, before any jargon. (See the autograd docstrings in
+  Plan 1 for the tone: "a numpy array that remembers how to compute its own
+  gradient", "we nudge each element up and down and measure how the output
+  changes".)
+- **Every plan ends with a `docs/concepts/<topic>.md` task** — a standalone
+  kid-friendly explanation of the big idea that plan introduced, with an analogy,
+  a tiny worked example, and a "why does this matter?" section. A plan is **not
+  done** until its concept doc exists.
+- **Tests double as readable examples** — name them so they read like sentences
+  describing the behaviour.
+
+If a reviewer can't understand a module from its docs without reading the code,
+the task is not complete.
+
+## Other conventions enforced by every plan
 
 These mirror the rest of the series and are repeated as Global Constraints in
 each plan:
@@ -22,8 +46,17 @@ each plan:
 - **TDD:** every behaviour gets a failing test first.
 - **ruff** + **pyright** must stay clean.
 - **No `TYPE_CHECKING`, no `from __future__ import annotations`.**
-- **Docs-first:** kid-friendly analogies; concepts documented as features land.
 - Frequent, small commits (one per task minimum).
+
+## Concept docs each plan must deliver
+
+- Plan 1: `docs/concepts/autograd.md` — *The breadcrumb trail* (how a network
+  remembers what it did so it can learn from mistakes).
+- Plan 2: `docs/concepts/tokens.md`, `embeddings.md`, `attention.md` — tokens as
+  Lego bricks, embeddings as a map of meaning, attention as re-reading a sentence.
+- Plan 3: `docs/concepts/how-a-model-learns.md`, `sampling.md`, `transformer.md`.
+- Plan 4: `docs/concepts/grow-your-own-data.md` — harvest, generate, grade.
+- Plan 5: full `docs/concepts/` polish + README with example session.
 
 ## Grammar-constrained decoding
 
