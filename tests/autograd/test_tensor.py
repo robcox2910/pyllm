@@ -53,3 +53,22 @@ def test_add_broadcasting_reduces_grad():
     # b is used in both rows, so its grad sums across rows.
     assert b.grad.tolist() == [2.0, 2.0]
     assert a.grad.tolist() == [[1.0, 1.0], [1.0, 1.0]]
+
+
+def test_mul_forward():
+    out = Tensor([2.0, 3.0]) * Tensor([4.0, 5.0])
+    assert out.data.tolist() == [8.0, 15.0]
+
+
+def test_mul_backward_uses_other_operand():
+    a = Tensor([2.0, 3.0])
+    b = Tensor([4.0, 5.0])
+    out = a * b
+    out.backward()
+    assert a.grad.tolist() == [4.0, 5.0]  # d(a*b)/da = b
+    assert b.grad.tolist() == [2.0, 3.0]  # d(a*b)/db = a
+
+
+def test_mul_scalar_on_right():
+    out = Tensor([2.0, 3.0]) * 10.0
+    assert out.data.tolist() == [20.0, 30.0]

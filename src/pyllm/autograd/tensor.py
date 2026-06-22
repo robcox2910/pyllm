@@ -55,6 +55,27 @@ class Tensor:
         """Support scalar + Tensor (reverse operand order)."""
         return self + other
 
+    def __mul__(self, other):
+        """Multiply two tensors (or a tensor and a scalar), building the compute graph.
+
+        The result tensor remembers its parents so gradients can flow back.
+        """
+        other = other if isinstance(other, Tensor) else Tensor(other)
+        out = Tensor(self.data * other.data, (self, other), "*")
+
+        def _backward():
+            # Gradient with respect to self: out.grad * other (d(a*b)/da = b)
+            # Gradient with respect to other: out.grad * self (d(a*b)/db = a)
+            self.grad += _unbroadcast(out.grad * other.data, self.data.shape)
+            other.grad += _unbroadcast(out.grad * self.data, other.data.shape)
+
+        out._backward = _backward
+        return out
+
+    def __rmul__(self, other):
+        """Support scalar * Tensor (reverse operand order)."""
+        return self * other
+
     def backward(self):
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
