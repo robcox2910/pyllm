@@ -33,7 +33,7 @@ class Tensor:
     """
 
     def __init__(self, data, _children=(), _op=""):
-        self.data = np.asarray(data, dtype=np.float64)
+        self.data = np.array(data, dtype=np.float64)
         self.grad = np.zeros_like(self.data)
         self._backward = lambda: None
         self._prev = set(_children)
@@ -145,7 +145,7 @@ class Tensor:
         """Share into equal parts — like splitting a pizza among friends.
 
         Division is built as multiply by the reciprocal: `a / b` becomes
-        `a * (b ^ -1)`, so gradients flow through multiplication and power.
+        `a * (b ** -1)`, so gradients flow through multiplication and power.
         """
         other = other if isinstance(other, Tensor) else Tensor(other)
         return self * (other ** -1)
@@ -153,7 +153,7 @@ class Tensor:
     def __rtruediv__(self, other):
         """Support `scalar / Tensor` — called when the left side isn't a Tensor.
 
-        Reorders via power: `c / t` becomes `(t ^ -1) * c`.
+        Reorders via power: `c / t` becomes `(t ** -1) * c`.
         """
         return (self ** -1) * other
 
@@ -165,12 +165,21 @@ class Tensor:
         through every recipe in one go.  Breadcrumb rule: error flows back to
         `A` via `out.grad @ B^T`, and back to `B` via `A^T @ out.grad`
         (`d(A@B)/dA = out.grad @ B^T`, `d(A@B)/dB = A^T @ out.grad`).
+
+        `A` may have extra batch dimensions (e.g. shape (B, T, D)) while `B`
+        is a plain 2-D matrix (shape (D, H)).  Gradients are unbroadcasted back
+        to each operand's original shape automatically, so batched matmul works
+        just like the simple 2-D case.
         """
         out = Tensor(self.data @ other.data, (self, other), "@")
 
         def _backward():
-            self.grad += out.grad @ other.data.swapaxes(-1, -2)
-            other.grad += self.data.swapaxes(-1, -2) @ out.grad
+            self.grad += _unbroadcast(
+                out.grad @ other.data.swapaxes(-1, -2), self.data.shape
+            )
+            other.grad += _unbroadcast(
+                self.data.swapaxes(-1, -2) @ out.grad, other.data.shape
+            )
 
         out._backward = _backward
         return out
