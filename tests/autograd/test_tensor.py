@@ -90,3 +90,27 @@ def test_matmul_backward_shapes_and_values():
     assert a.grad.tolist() == [[1.0, 1.0, 1.0]]
     # d(a@b)/db = a.T @ out.grad -> [[1],[2],[3]]
     assert b.grad.tolist() == [[1.0], [2.0], [3.0]]
+
+
+def test_sum_all_forward_and_backward():
+    a = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    out = a.sum()
+    assert out.data.tolist() == 10.0
+    out.backward()
+    assert a.grad.tolist() == [[1.0, 1.0], [1.0, 1.0]]
+
+
+def test_sum_axis_backward_broadcasts():
+    a = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    out = a.sum(axis=0)  # -> [4.0, 6.0]
+    assert out.data.tolist() == [4.0, 6.0]
+    out.backward()
+    assert a.grad.tolist() == [[1.0, 1.0], [1.0, 1.0]]
+
+
+def test_mean_all_backward():
+    a = Tensor([2.0, 4.0, 6.0, 8.0])
+    out = a.mean()
+    assert out.data.tolist() == 5.0
+    out.backward()
+    assert a.grad.tolist() == [0.25, 0.25, 0.25, 0.25]

@@ -119,6 +119,41 @@ class Tensor:
         out._backward = _backward
         return out
 
+    def sum(self, axis=None, keepdims=False):
+        """Pile up all the numbers into one stack; each piece shares the blame equally.
+
+        Like adding up everyone's pocket money into one pile: if the total is wrong,
+        every coin shares the blame equally. Gradient flows back as 1.0 to each element.
+        """
+        out = Tensor(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
+
+        def _backward():
+            grad = out.grad
+            if axis is not None and not keepdims:
+                grad = np.expand_dims(grad, axis)
+            self.grad += np.ones_like(self.data) * grad
+
+        out._backward = _backward
+        return out
+
+    def mean(self, axis=None, keepdims=False):
+        """Find the average — each number pitches in equally to the overall picture.
+
+        Like a class average: each student's score contributes a fair (1/N) share,
+        so if the class average is off, each student gets blamed by 1/N of that error.
+        """
+        out = Tensor(self.data.mean(axis=axis, keepdims=keepdims), (self,), "mean")
+        count = self.data.size if axis is None else self.data.shape[axis]
+
+        def _backward():
+            grad = out.grad
+            if axis is not None and not keepdims:
+                grad = np.expand_dims(grad, axis)
+            self.grad += np.ones_like(self.data) * grad / count
+
+        out._backward = _backward
+        return out
+
     def backward(self):
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
