@@ -297,3 +297,12 @@ class Tensor:
         # Walk backward: reverse topological order runs _backward closures.
         for node in reversed(topo):
             node._backward()
+
+    def zero_grad(self):
+        """Wipe the slate clean before the next learning step.
+
+        Like erasing last round's notes so this round's blame doesn't pile on top.
+        When you run backward() again, the gradients will accumulate from scratch,
+        letting you take a fresh gradient descent step without old errors interfering.
+        """
+        self.grad = np.zeros_like(self.data)
