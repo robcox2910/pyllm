@@ -114,3 +114,32 @@ def test_mean_all_backward():
     assert out.data.tolist() == 5.0
     out.backward()
     assert a.grad.tolist() == [0.25, 0.25, 0.25, 0.25]
+
+
+def test_relu_forward_and_backward():
+    a = Tensor([-2.0, 0.0, 3.0])
+    out = a.relu()
+    assert out.data.tolist() == [0.0, 0.0, 3.0]
+    out.backward()
+    assert a.grad.tolist() == [0.0, 0.0, 1.0]
+
+
+def test_exp_backward_is_exp():
+    a = Tensor([0.0, 1.0])
+    out = a.exp()
+    out.backward()
+    assert np.allclose(a.grad, np.exp([0.0, 1.0]))
+
+
+def test_log_backward_is_reciprocal():
+    a = Tensor([1.0, 2.0, 4.0])
+    out = a.log()
+    out.backward()
+    assert np.allclose(a.grad, [1.0, 0.5, 0.25])
+
+
+def test_tanh_backward():
+    a = Tensor([0.0])
+    out = a.tanh()
+    out.backward()
+    assert np.allclose(a.grad, [1.0])  # 1 - tanh(0)^2 = 1

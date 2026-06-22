@@ -154,6 +154,65 @@ class Tensor:
         out._backward = _backward
         return out
 
+    def relu(self):
+        """A one-way gate for numbers — lets positive signals through, blocks negatives.
+
+        Think of a water valve that only opens when water is flowing forward: positive
+        numbers pass unchanged, but negatives get shut out (become zero). Gradient is 1
+        where it let the signal through, 0 where it blocked it.
+        """
+        out = Tensor(np.maximum(0.0, self.data), (self,), "relu")
+
+        def _backward():
+            self.grad += (out.data > 0.0) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def exp(self):
+        """Rapid growth, like money doubling each time — the faster the more it grows.
+
+        Exponential turns small numbers into huge ones (e^2 ≈ 7, e^5 ≈ 148), and the
+        slope at any point equals its own height, so its gradient is just itself.
+        """
+        out = Tensor(np.exp(self.data), (self,), "exp")
+
+        def _backward():
+            self.grad += out.data * out.grad
+
+        out._backward = _backward
+        return out
+
+    def log(self):
+        """The opposite of exp — undoes growth by asking 'e to what power equals this?'
+
+        Log shrinks big numbers down (log(e^2) = 2, log(100) ≈ 4.6), so it's the
+        inverse of exponential. Its gradient is 1/x, so it gets flatter as x grows.
+        """
+        out = Tensor(np.log(self.data), (self,), "log")
+
+        def _backward():
+            self.grad += (1.0 / self.data) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def tanh(self):
+        """A squasher that gently flattens any number into the range -1 to 1.
+
+        No matter how big or negative your number is, tanh squeezes it: tanh(0) = 0,
+        tanh(big) ≈ 1, tanh(-big) ≈ -1. Its gradient is 1 - tanh²(x), so the slope is
+        steepest at zero and flattens toward the edges.
+        """
+        t = np.tanh(self.data)
+        out = Tensor(t, (self,), "tanh")
+
+        def _backward():
+            self.grad += (1.0 - t * t) * out.grad
+
+        out._backward = _backward
+        return out
+
     def backward(self):
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
