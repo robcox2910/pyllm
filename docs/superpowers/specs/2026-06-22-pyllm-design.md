@@ -13,9 +13,16 @@ trivial bigram model up to a full GPT-style Transformer. Every concept is
 explained with analogies a 12-year-old can follow, every layer is built and
 tested in isolation, and the whole thing is developed with TDD.
 
-The default demo: a model that **dreams up new Pokémon** (names and
-descriptions). It ships with a small pre-trained checkpoint so it generates text
-the instant you launch it, and you can also train your own model on any text file.
+Two showcase demos:
+
+- **Warm-up — dream up new Pokémon.** A friendly, instant, char-level demo. Ships
+  with a small pre-trained checkpoint so it generates the moment you launch it.
+- **Flagship — write Pebble code.** PyLLM (the *brain* of the series) learns to
+  write *Pebble* (the *language* of the series). This is the self-referential
+  centrepiece, and it solves the "no code in the wild" problem in a way that is
+  itself a lesson (see §6).
+
+You can also train your own model on any text file.
 
 ## 2. The mantra, applied
 
@@ -68,7 +75,11 @@ src/pyllm/
   models/        bigram, mlp, gpt — assembled from nn building blocks.
   training/      optimizer from scratch (SGD + Adam), batching/data loading,
                  and the training loop.
-  data/          corpus loader + bundled pokemon_corpus.txt.
+  data/          corpus loader + bundled pokemon_corpus.txt + pebble_corpus.txt.
+  pebble/        Pebble flagship: program generator (random valid ASTs →
+                 formatter), corpus harvester (build-time), and a validity
+                 scorer that runs output back through pebble-lang's parser
+                 (optional import, degrades gracefully if absent).
   generate.py    sampling strategies: greedy, temperature, top-k.
   checkpoint.py  save/load model weights (numpy .npz) + config metadata.
   cli.py         the REPL + `train` + `tokenize` commands.
@@ -106,7 +117,41 @@ prompt text → tokenizer → ids → model forward → probability over next to
   → sample (greedy / temperature / top-k) → append → repeat → decode → text
 ```
 
-## 6. User experience (CLI)
+## 6. The Pebble flagship: growing a corpus with no code in the wild
+
+There is no public corpus of Pebble code — but PyLLM owns the language toolchain
+(`pebble-lang` provides a lexer, `parser.py`, `ast_nodes.py`, and `formatter.py`),
+so we manufacture and grade our own data. This is the centrepiece lesson:
+**when there's no data, you grow it and you measure it.**
+
+Three pillars:
+
+1. **Harvest** — a build-time script extracts the hundreds of real, hand-written
+   Pebble snippets embedded in `pebble-lang`'s tests/docs and PyStack's docs into
+   a corpus file. Small but idiomatic.
+2. **Generate (the key trick)** — a small **Pebble program generator** builds
+   random-but-valid ASTs over a useful subset of the grammar (let-bindings,
+   arithmetic/boolean expressions, `if`/`while`, function definitions and calls,
+   `import`s) and runs them through Pebble's own **formatter** to emit
+   guaranteed-valid, well-formatted source. This yields effectively unlimited,
+   always-correct training data.
+3. **Grade with an oracle** — because we own the parser, after generation we feed
+   the model's output back through Pebble's lexer/parser and report the
+   **percentage that parses** as a hard quality metric. Almost no LLM project can
+   objectively score its own output; we can.
+
+**Dependency boundary.** Harvesting and corpus generation happen at *build time*;
+the resulting Pebble corpus and trained checkpoint are committed into the package,
+so the shipped PyLLM does not import `pebble-lang` to run the demo. The optional
+**live validity-scoring** command imports `pebble-lang`'s parser only when it is
+available, and degrades gracefully when it is not.
+
+**Stretch goal (clearly out of the initial scope): grammar-constrained
+decoding** — at generation time, mask the next-token distribution to only tokens
+the Pebble grammar permits, so output is *always* syntactically valid. Powerful
+and very on-theme, but layered on after the core flagship works.
+
+## 7. User experience (CLI)
 
 - `uv run pyllm` — **chat/generate REPL.** Loads the bundled pre-trained Pokémon
   checkpoint and dreams up new Pokémon immediately (no training wait). Exposes
@@ -116,11 +161,16 @@ prompt text → tokenizer → ids → model forward → probability over next to
   drop, and save a checkpoint.
 - `uv run pyllm tokenize` — show how a piece of text is split into tokens (a
   hands-on teaching demo).
+- `uv run pyllm pebble` — **the flagship demo.** Generate Pebble code from a
+  prompt and (when `pebble-lang` is available) report what percentage of the
+  output parses. Loads the bundled pre-trained Pebble checkpoint.
+- `uv run pyllm gen-corpus` — run the Pebble program generator to (re)build a
+  synthetic training corpus (build-time tool).
 
-The bundled Pokémon corpus is small enough to train a tiny GPT on a laptop CPU
-in minutes.
+The bundled corpora are small enough to train a tiny GPT on a laptop CPU in
+minutes.
 
-## 7. Correctness & testing (TDD)
+## 8. Correctness & testing (TDD)
 
 - **Numerical gradient-checking for the autograd engine.** Compare each op's
   analytic gradient against a finite-difference approximation. This proves
@@ -131,16 +181,22 @@ in minutes.
   toward zero on ~10 memorized examples is broken; this is a fast, decisive
   smoke test of the entire stack (tokenizer → model → loss → optimizer).
 - **Deterministic seeds** so tests are reproducible.
+- **Pebble corpus generator is validated by the parser.** Every program the
+  generator emits must parse — a test feeds a batch of generated programs through
+  `pebble-lang`'s parser and asserts 100% valid (skipped if `pebble-lang` is not
+  importable in the test environment).
+- **Validity scorer tested** on known-good and known-bad snippets.
 
-## 8. PyStack integration (done immediately)
+## 9. PyStack integration (done immediately)
 
 - Add a new Pebble module **`import "llm"`** exposing functions such as
   `llm_generate(prompt)` (and helpers to load a checkpoint / set sampling
-  options) so any Pebble program can generate text using PyLLM.
+  options) so any Pebble program can generate text using PyLLM. The flagship
+  closes the loop: a Pebble program can ask PyLLM to *write more Pebble*.
 - Add PyLLM as the **11th project ("the brain")** to the PyStack README table
   and integration layer.
 
-## 9. Documentation
+## 10. Documentation
 
 `docs/concepts/` kid-friendly write-ups, including:
 - *What is a token?* (chopping words into Lego bricks)
@@ -149,11 +205,13 @@ in minutes.
 - *Attention is re-reading a sentence* (how a token decides which earlier words matter)
 - *How a Transformer is built* (stacking the pieces)
 - *How a model learns* (loss, gradients, the training loop)
+- *When there's no data, grow your own* (the Pebble corpus: harvest, generate
+  with the formatter, and grade with the parser)
 
 Plus the standard README with features, an example session, and the "Related
 Projects" series table.
 
-## 10. Out of scope (YAGNI)
+## 11. Out of scope (YAGNI)
 
 - GPUs / CUDA, distributed training, mixed precision.
 - Pretraining on large internet corpora.
@@ -161,11 +219,19 @@ Projects" series table.
   instructions").
 - Alternative architectures (RNNs/LSTMs, state-space models).
 - A web UI (the REPL is the interface; PyStack/Pebble is the programmatic interface).
+- Grammar-constrained decoding (deferred stretch goal, see §6).
+- Semantic correctness of generated Pebble (we target *syntactic* validity; the
+  model is not expected to write correct programs, only parseable ones).
 
-## 11. Open questions
+## 12. Open questions
 
 - Final tuned hyperparameters and exact size of the shipped Pokémon checkpoint
   (decided empirically during implementation — must train quickly and produce
   recognizably Pokémon-ish output).
 - Exact contents/size of the bundled Pokémon corpus (hand-assembled during
   implementation).
+- How wide a subset of the Pebble grammar the program generator should cover
+  initially (start narrow — let/if/while/functions/expressions/imports — and
+  widen as the harvested corpus reveals common idioms).
+- Mix ratio of harvested vs. generated Pebble data in the final training corpus
+  (tuned empirically against the parse-rate metric).
