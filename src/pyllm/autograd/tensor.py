@@ -19,7 +19,18 @@ def _unbroadcast(grad, shape):
 
 
 class Tensor:
-    """A numpy array that remembers how to compute its own gradient."""
+    """A number (or grid of numbers) that drops breadcrumbs as it travels through math.
+
+    Think of it like a hiker who leaves a trail of pebbles on the way to the top
+    of a hill.  When we reach the summit (the final answer, like a loss), we walk
+    back along those pebbles to figure out how much each step contributed to how
+    high we climbed.  That walk-back is called the *backward pass*, and the
+    breadcrumbs are stored in `_prev` (the parents) and `_backward` (the recipe
+    for sharing blame with each parent).
+
+    `data`  — the actual number(s) carried right now.
+    `grad`  — how much this tensor should change to make the final answer smaller.
+    """
 
     def __init__(self, data, _children=(), _op=""):
         self.data = np.asarray(data, dtype=np.float64)
@@ -36,9 +47,13 @@ class Tensor:
         return f"Tensor(data={self.data}, grad={self.grad})"
 
     def __add__(self, other):
-        """Add two tensors (or a tensor and a scalar), building the compute graph.
+        """Pour two cups of water together to get one bigger cup.
 
-        The result tensor remembers its parents so gradients can flow back.
+        When we add `a + b`, the result is just the combined total — simple!
+        The clever bit is in *blame*: if the total is off by a little, both
+        cups share that blame equally.  Each parent receives a copy of the
+        output's gradient, unbroadcasted back to its original shape (breadcrumb:
+        "the error flows back unchanged to both sides").
         """
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data + other.data, (self, other), "+")
@@ -52,13 +67,20 @@ class Tensor:
         return out
 
     def __radd__(self, other):
-        """Support scalar + Tensor (reverse operand order)."""
+        """Support `scalar + Tensor` — called when the left side isn't a Tensor.
+
+        Flips the order and delegates to `__add__`, so `3 + t` works like `t + 3`.
+        """
         return self + other
 
     def __mul__(self, other):
-        """Multiply two tensors (or a tensor and a scalar), building the compute graph.
+        """Scale one number by another — like doubling a recipe.
 
-        The result tensor remembers its parents so gradients can flow back.
+        If you double the amount of flour (`a * 2`), the whole cake gets twice as big.
+        When we ask "how much did `a` affect the result?", the answer depends on what
+        `b` was (and vice versa).  Breadcrumb rule: each side's gradient is the
+        output's gradient multiplied by the *other* side's value
+        (`d(a*b)/da = b`, `d(a*b)/db = a`).
         """
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data * other.data, (self, other), "*")
@@ -73,17 +95,20 @@ class Tensor:
         return out
 
     def __rmul__(self, other):
-        """Support scalar * Tensor (reverse operand order)."""
+        """Support `scalar * Tensor` — called when the left side isn't a Tensor.
+
+        Flips the order and delegates to `__mul__`, so `3 * t` works like `t * 3`.
+        """
         return self * other
 
     def __matmul__(self, other):
-        """Matrix multiply two tensors, building the compute graph.
+        """Combine two tables of numbers — like running many recipes at once.
 
-        The @ operator computes C = A @ B (matrix multiplication).
-        Gradients flow via:
-        - d(A@B)/dA = out.grad @ B^T
-        - d(A@B)/dB = A^T @ out.grad
-        where ^T means transpose the last two axes (swapaxes(-1, -2)).
+        Imagine `A` is a table of ingredients (one row per dish) and `B` is a
+        table of recipes (one column per flavour).  `A @ B` mixes every dish
+        through every recipe in one go.  Breadcrumb rule: error flows back to
+        `A` via `out.grad @ B^T`, and back to `B` via `A^T @ out.grad`
+        (`d(A@B)/dA = out.grad @ B^T`, `d(A@B)/dB = A^T @ out.grad`).
         """
         out = Tensor(self.data @ other.data, (self, other), "@")
 
