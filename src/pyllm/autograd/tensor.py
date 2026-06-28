@@ -278,6 +278,21 @@ class Tensor:
         out._backward = _backward
         return out
 
+    def transpose(self):
+        """Flip a table on its side — swap the last two axes (rows <-> columns).
+
+        Like turning a class register so the names run across the top instead of
+        down the side. Attention uses this to line up "questions" against
+        "keys". Breadcrumb rule: gradient just gets flipped back the same way.
+        """
+        out = Tensor(self.data.swapaxes(-1, -2), (self,), "transpose")
+
+        def _backward():
+            self.grad += out.grad.swapaxes(-1, -2)
+
+        out._backward = _backward
+        return out
+
     def backward(self):
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
