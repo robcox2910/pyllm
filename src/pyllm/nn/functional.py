@@ -76,3 +76,17 @@ def cross_entropy(logits, targets):
 
     out._backward = _backward
     return out
+
+
+def gelu(t):
+    """A soft on/off switch for signals — like a dimmer, not a hard light switch.
+
+    `relu` slams negatives to exactly zero. `gelu` is gentler: it lets most of a
+    positive number through, fades negatives smoothly toward zero, and bends
+    softly around zero. This smoothness helps Transformers learn. It's built
+    purely from `*`, `**`, `+` and `tanh`, so its gradient comes for free from
+    the autograd engine.
+    """
+    c = np.sqrt(2.0 / np.pi)
+    inner = (t + (t ** 3) * 0.044715) * c
+    return (t * 0.5) * (inner.tanh() + 1.0)

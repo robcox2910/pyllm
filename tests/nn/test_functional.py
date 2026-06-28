@@ -2,7 +2,7 @@ import numpy as np
 
 from pyllm.autograd import Tensor
 from pyllm.autograd.gradcheck import numerical_grad
-from pyllm.nn.functional import cross_entropy, embedding, softmax
+from pyllm.nn.functional import cross_entropy, embedding, gelu, softmax
 
 
 def test_softmax_rows_sum_to_one():
@@ -64,3 +64,26 @@ def test_cross_entropy_gradients_check():
     out = make_output()
     out.backward()
     assert np.allclose(logits.grad, numerical_grad(make_output, logits), atol=1e-4)
+
+
+def test_gelu_zero_maps_to_zero():
+    assert np.isclose(gelu(Tensor([0.0])).data[0], 0.0)
+
+
+def test_gelu_is_close_to_identity_for_large_positive():
+    assert np.isclose(gelu(Tensor([5.0])).data[0], 5.0, atol=1e-2)
+
+
+def test_gelu_squashes_large_negative_toward_zero():
+    assert abs(gelu(Tensor([-5.0])).data[0]) < 1e-2
+
+
+def test_gelu_gradients_check():
+    a = Tensor([-1.0, 0.3, 2.0])
+
+    def make_output():
+        return gelu(a).sum()
+
+    out = make_output()
+    out.backward()
+    assert np.allclose(a.grad, numerical_grad(make_output, a), atol=1e-4)
