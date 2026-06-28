@@ -2,7 +2,7 @@ import numpy as np
 
 from pyllm.autograd import Tensor
 from pyllm.autograd.gradcheck import numerical_grad
-from pyllm.nn.functional import cross_entropy, embedding, gelu, softmax
+from pyllm.nn.functional import concat, cross_entropy, embedding, gelu, softmax
 
 
 def test_softmax_rows_sum_to_one():
@@ -87,3 +87,21 @@ def test_gelu_gradients_check():
     out = make_output()
     out.backward()
     assert np.allclose(a.grad, numerical_grad(make_output, a), atol=1e-4)
+
+
+def test_concat_joins_along_last_axis():
+    out = concat([Tensor([[1.0, 2.0]]), Tensor([[3.0]])], axis=-1)
+    assert out.data.tolist() == [[1.0, 2.0, 3.0]]
+
+
+def test_concat_backward_splits_gradient():
+    a = Tensor([[1.0, 2.0]])
+    b = Tensor([[3.0]])
+
+    def make_output():
+        return (concat([a, b], axis=-1) * Tensor([[10.0, 20.0, 30.0]])).sum()
+
+    out = make_output()
+    out.backward()
+    assert np.allclose(a.grad, numerical_grad(make_output, a), atol=1e-4)
+    assert np.allclose(b.grad, numerical_grad(make_output, b), atol=1e-4)

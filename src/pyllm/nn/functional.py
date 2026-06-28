@@ -90,3 +90,25 @@ def gelu(t):
     c = np.sqrt(2.0 / np.pi)
     inner = (t + (t ** 3) * 0.044715) * c
     return (t * 0.5) * (inner.tanh() + 1.0)
+
+
+def concat(tensors, axis=-1):
+    """Stick several tables side by side into one wider table.
+
+    Multi-head attention gives each "head" its own small report; `concat` lays
+    the reports next to each other to make one big report. Breadcrumb rule: when
+    blame comes back, each head only gets the slice of blame that belongs to its
+    own columns.
+    """
+    data = np.concatenate([t.data for t in tensors], axis=axis)
+    out = Tensor(data, tuple(tensors), "concat")
+
+    def _backward():
+        sizes = [t.data.shape[axis] for t in tensors]
+        split_points = np.cumsum(sizes)[:-1]
+        pieces = np.split(out.grad, split_points, axis=axis)
+        for tensor, piece in zip(tensors, pieces, strict=True):
+            tensor.grad += piece
+
+    out._backward = _backward
+    return out
