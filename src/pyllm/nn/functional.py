@@ -44,3 +44,35 @@ def embedding(weight, ids):
 
     out._backward = _backward
     return out
+
+
+def cross_entropy(logits, targets):
+    """Score how surprised the model was by the right answer (lower = better).
+
+    For each example the model gives a score to every possible next token. We
+    turn those into probabilities (softmax) and ask: "what probability did you
+    give the *correct* token?" If it was confident and right, the surprise is
+    near zero; if it was confident and wrong, the surprise is huge. We average
+    the surprise over all examples. Breadcrumb rule: push the predicted
+    probabilities toward the true answer -- gradient is `(softmax - one_hot) / N`.
+    """
+    targets = np.asarray(targets)
+    flat_logits = logits.data.reshape(-1, logits.data.shape[-1])
+    flat_targets = targets.reshape(-1)
+    n = flat_logits.shape[0]
+
+    shifted = flat_logits - flat_logits.max(axis=1, keepdims=True)
+    exp = np.exp(shifted)
+    probs = exp / exp.sum(axis=1, keepdims=True)
+    correct = probs[np.arange(n), flat_targets]
+    loss_value = -np.log(correct).mean()
+    out = Tensor(loss_value, (logits,), "cross_entropy")
+
+    def _backward():
+        grad = probs.copy()
+        grad[np.arange(n), flat_targets] -= 1.0
+        grad = grad / n * out.grad
+        logits.grad += grad.reshape(logits.data.shape)
+
+    out._backward = _backward
+    return out

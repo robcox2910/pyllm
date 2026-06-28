@@ -2,7 +2,7 @@ import numpy as np
 
 from pyllm.autograd import Tensor
 from pyllm.autograd.gradcheck import numerical_grad
-from pyllm.nn.functional import embedding, softmax
+from pyllm.nn.functional import cross_entropy, embedding, softmax
 
 
 def test_softmax_rows_sum_to_one():
@@ -39,3 +39,28 @@ def test_embedding_backward_scatters_to_used_rows():
     out.sum().backward()
     # row 0 gets gradient 2 (used twice), row 1 zero, row 2 one
     assert weight.grad.tolist() == [[2.0, 2.0], [0.0, 0.0], [1.0, 1.0]]
+
+
+def test_cross_entropy_perfect_prediction_is_near_zero():
+    # huge logit on the correct class -> loss ~ 0
+    logits = Tensor([[100.0, 0.0, 0.0]])
+    loss = cross_entropy(logits, np.array([0]))
+    assert loss.data < 1e-3
+
+
+def test_cross_entropy_uniform_logits_equals_log_v():
+    logits = Tensor([[0.0, 0.0, 0.0, 0.0]])  # V = 4
+    loss = cross_entropy(logits, np.array([2]))
+    assert np.isclose(loss.data, np.log(4))
+
+
+def test_cross_entropy_gradients_check():
+    logits = Tensor([[0.5, -1.0, 2.0], [1.0, 0.0, -0.5]])
+    targets = np.array([2, 0])
+
+    def make_output():
+        return cross_entropy(logits, targets)
+
+    out = make_output()
+    out.backward()
+    assert np.allclose(logits.grad, numerical_grad(make_output, logits), atol=1e-4)
