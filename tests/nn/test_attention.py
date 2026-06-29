@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
 
 from pyllm.autograd import Tensor
-from pyllm.nn.attention import Head
+from pyllm.nn.attention import Head, MultiHeadAttention
 
 
 def test_head_output_shape():
@@ -28,3 +29,22 @@ def test_head_parameters_exclude_mask():
     head = Head(embed_dim=8, head_size=4, block_size=16, rng=np.random.default_rng(0))
     # 3 bias-free Linear layers, 1 weight each -> 3 params (mask is a buffer)
     assert len(head.parameters()) == 3
+
+
+def test_multihead_output_shape():
+    mha = MultiHeadAttention(embed_dim=8, num_heads=2, block_size=16,
+                             rng=np.random.default_rng(0))
+    x = Tensor(np.ones((2, 5, 8)))
+    assert mha(x).shape == (2, 5, 8)
+
+
+def test_multihead_requires_divisible_dim():
+    with pytest.raises(AssertionError):
+        MultiHeadAttention(embed_dim=8, num_heads=3, block_size=16)
+
+
+def test_multihead_collects_all_head_and_proj_params():
+    mha = MultiHeadAttention(embed_dim=8, num_heads=2, block_size=16,
+                             rng=np.random.default_rng(0))
+    # 2 heads x 3 params + proj (weight + bias) = 6 + 2 = 8
+    assert len(mha.parameters()) == 8

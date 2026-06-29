@@ -1,6 +1,6 @@
 import numpy as np
 
-from pyllm.nn.functional import softmax
+from pyllm.nn.functional import concat, softmax
 from pyllm.nn.linear import Linear
 from pyllm.nn.module import Module
 
@@ -34,3 +34,26 @@ class Head(Module):
         scores = scores + self.mask[:seq_len, :seq_len]
         weights = softmax(scores, axis=-1)
         return weights @ v           # (B, T, head_size)
+
+
+class MultiHeadAttention(Module):
+    """Several attention heads working in parallel, then combined.
+
+    One head can only track one kind of relationship at a time. Like a panel of
+    readers where one watches for "who did what", another for "when", another for
+    "where" -- each head looks for a different pattern. We run them all at once,
+    lay their reports side by side (`concat`), and blend them with a final
+    Linear so the network can mix what every head found.
+    """
+
+    def __init__(self, embed_dim, num_heads, block_size, rng=None):
+        assert embed_dim % num_heads == 0, "embed_dim must divide evenly by num_heads"
+        head_size = embed_dim // num_heads
+        self.heads = [
+            Head(embed_dim, head_size, block_size, rng=rng) for _ in range(num_heads)
+        ]
+        self.proj = Linear(embed_dim, embed_dim, rng=rng)
+
+    def forward(self, x):
+        combined = concat([head(x) for head in self.heads], axis=-1)
+        return self.proj(combined)
