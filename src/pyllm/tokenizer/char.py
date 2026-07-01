@@ -3,8 +3,9 @@ class CharTokenizer:
 
     Imagine giving every letter a locker number: a=0, b=1, c=2... To "encode" a
     word you write down its locker numbers; to "decode" you read the letters back
-    out. Simple and lossless, but the model has to spell everything out one
-    letter at a time -- which is why we also build a smarter BPE tokenizer later.
+    out. Simple and lossless for any character it has already seen (encoding an
+    unseen character raises a KeyError), but the model has to spell everything out
+    one letter at a time -- which is why we also build a smarter BPE tokenizer later.
     """
 
     def __init__(self, text):

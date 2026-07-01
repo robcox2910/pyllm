@@ -29,3 +29,6 @@ One head tracks one kind of relationship. **Multi-head attention** runs several
 in parallel -- one might follow "who did what", another "when" -- then blends
 their reports. Stack attention + a little per-token thinking (feed-forward) and
 you have a **Transformer block**, the repeatable brick of a GPT.
+
+In PyLLM, one head is a `Head`, `MultiHeadAttention` runs several in parallel,
+and a `TransformerBlock` stacks attention with a feed-forward step.

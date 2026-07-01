@@ -7,8 +7,9 @@
 ## Two ways to chop
 
 **Character tokens** (`CharTokenizer`): every single letter is its own brick.
-`"cat"` becomes `c, a, t` -> `[2, 0, 19]`. Simple and never fails, but the model
-has to spell out everything one letter at a time.
+`"cat"` becomes `c, a, t` -> `[2, 0, 19]`. Simple and lossless for any character
+it has already seen (an unseen character is a KeyError), but the model has to
+spell out everything one letter at a time.
 
 **BPE tokens** (`BPETokenizer`): we let the computer *learn* common chunks. It
 keeps gluing together the two neighbours that show up together most often, so
