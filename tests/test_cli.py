@@ -19,8 +19,19 @@ def test_default_command_generates_from_bundled_checkpoint(capsys):
 
 def test_train_writes_a_checkpoint(tmp_path):
     dest = tmp_path / "my.npz"
-    code = main(["train", "--model", "bigram", "--steps", "5",
-                 "--out", str(dest), "--seed", "0"])
+    code = main(
+        [
+            "train",
+            "--model",
+            "bigram",
+            "--steps",
+            "5",
+            "--out",
+            str(dest),
+            "--seed",
+            "0",
+        ]
+    )
     assert code == 0
     assert dest.exists()
 

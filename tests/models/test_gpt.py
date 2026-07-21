@@ -6,26 +6,48 @@ from pyllm.nn import cross_entropy
 
 
 def test_gpt_logits_shape():
-    model = GPT(vocab_size=6, block_size=8, embed_dim=16, num_heads=2,
-                num_layers=2, rng=np.random.default_rng(0))
+    model = GPT(
+        vocab_size=6,
+        block_size=8,
+        embed_dim=16,
+        num_heads=2,
+        num_layers=2,
+        rng=np.random.default_rng(0),
+    )
     idx = np.array([[1, 2, 3, 4]])  # (B, T), T <= block_size
     assert model(idx).shape == (1, 4, 6)
 
 
 def test_gpt_mode_and_config():
-    model = GPT(vocab_size=6, block_size=8, embed_dim=16, num_heads=2,
-                num_layers=2, rng=np.random.default_rng(0))
+    model = GPT(
+        vocab_size=6,
+        block_size=8,
+        embed_dim=16,
+        num_heads=2,
+        num_layers=2,
+        rng=np.random.default_rng(0),
+    )
     assert model.mode == "sequence"
     assert model.config() == {
-        "kind": "gpt", "vocab_size": 6, "block_size": 8,
-        "embed_dim": 16, "num_heads": 2, "num_layers": 2,
+        "kind": "gpt",
+        "vocab_size": 6,
+        "block_size": 8,
+        "embed_dim": 16,
+        "num_heads": 2,
+        "num_layers": 2,
     }
 
 
 def test_gpt_is_causal():
     # Disturbing the LAST position must not change earlier-position logits.
-    model = GPT(vocab_size=6, block_size=8, embed_dim=16, num_heads=2,
-                num_layers=2, rng=np.random.default_rng(0))
+    model = GPT(
+        vocab_size=6,
+        block_size=8,
+        embed_dim=16,
+        num_heads=2,
+        num_layers=2,
+        rng=np.random.default_rng(0),
+    )
     base = np.array([[1, 2, 3, 4, 5]])
     changed = base.copy()
     changed[0, -1] = 0  # change only the final token
@@ -35,8 +57,14 @@ def test_gpt_is_causal():
 
 
 def test_gpt_trains_end_to_end_gradient_flow():
-    model = GPT(vocab_size=6, block_size=8, embed_dim=16, num_heads=2,
-                num_layers=2, rng=np.random.default_rng(0))
+    model = GPT(
+        vocab_size=6,
+        block_size=8,
+        embed_dim=16,
+        num_heads=2,
+        num_layers=2,
+        rng=np.random.default_rng(0),
+    )
     idx = np.array([[1, 2, 3, 4]])
     targets = np.array([[2, 3, 4, 5]])
     loss = cross_entropy(model(idx), targets)

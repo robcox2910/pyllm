@@ -1,7 +1,4 @@
-from pyllm.nn import Embedding
-from pyllm.nn import Linear
-from pyllm.nn import Module
-from pyllm.nn import gelu
+from pyllm.nn import Embedding, Linear, Module, gelu
 
 
 class MLP(Module):
@@ -15,8 +12,7 @@ class MLP(Module):
     guesses than the bigram.
     """
 
-    def __init__(self, vocab_size, block_size=3, embed_dim=16, hidden_dim=64,
-                 rng=None):
+    def __init__(self, vocab_size, block_size=3, embed_dim=16, hidden_dim=64, rng=None):
         self.vocab_size = vocab_size
         self.block_size = block_size
         self.embed_dim = embed_dim

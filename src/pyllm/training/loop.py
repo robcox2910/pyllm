@@ -1,11 +1,19 @@
 from pyllm.nn import cross_entropy
 from pyllm.training.data import get_batch
-from pyllm.training.optim import SGD
-from pyllm.training.optim import Adam
+from pyllm.training.optim import SGD, Adam
 
 
-def train(model, data, steps=1000, batch_size=32, lr=1e-3, optimizer="adam",
-          rng=None, log_every=0, log=print):
+def train(
+    model,
+    data,
+    steps=1000,
+    batch_size=32,
+    lr=1e-3,
+    optimizer="adam",
+    rng=None,
+    log_every=0,
+    log=print,
+):
     """Teach a model by showing it batches over and over and nudging its weights.
 
     This is the whole heartbeat of learning, repeated `steps` times:
@@ -22,8 +30,7 @@ def train(model, data, steps=1000, batch_size=32, lr=1e-3, optimizer="adam",
     opt = Adam(params, lr=lr) if optimizer == "adam" else SGD(params, lr=lr)
     losses = []
     for step in range(steps):
-        x, y = get_batch(data, model.block_size, batch_size, mode=model.mode,
-                         rng=rng)
+        x, y = get_batch(data, model.block_size, batch_size, mode=model.mode, rng=rng)
         logits = model(x)
         loss = cross_entropy(logits, y)
         opt.zero_grad()

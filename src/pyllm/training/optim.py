@@ -51,9 +51,9 @@ class Adam:
         self.t += 1
         for i, p in enumerate(self.parameters):
             self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * p.grad
-            self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * p.grad ** 2
-            m_hat = self.m[i] / (1 - self.beta1 ** self.t)
-            v_hat = self.v[i] / (1 - self.beta2 ** self.t)
+            self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * p.grad**2
+            m_hat = self.m[i] / (1 - self.beta1**self.t)
+            v_hat = self.v[i] / (1 - self.beta2**self.t)
             p.data -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
     def zero_grad(self):

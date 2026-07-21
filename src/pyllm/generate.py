@@ -29,8 +29,15 @@ def sample_next(logits_row, temperature=1.0, top_k=None, rng=None):
     return int(rng.choice(len(probs), p=probs))
 
 
-def generate(model, tokenizer, prompt="", max_new_tokens=100, temperature=1.0,
-             top_k=None, rng=None):
+def generate(
+    model,
+    tokenizer,
+    prompt="",
+    max_new_tokens=100,
+    temperature=1.0,
+    top_k=None,
+    rng=None,
+):
     """Dream up new text one character at a time, feeding each guess back in.
 
     Start with the prompt, ask the model "what comes next?", roll for a character
@@ -44,7 +51,7 @@ def generate(model, tokenizer, prompt="", max_new_tokens=100, temperature=1.0,
     model.eval()
     context = list(tokenizer.encode(prompt))
     for _ in range(max_new_tokens):
-        window = context[-model.block_size:]
+        window = context[-model.block_size :]
         if model.mode == "single":
             # MLP needs exactly block_size tokens; left-pad short windows.
             if len(window) < model.block_size:
@@ -55,6 +62,7 @@ def generate(model, tokenizer, prompt="", max_new_tokens=100, temperature=1.0,
         x = np.array([window], dtype=np.int64)
         logits = model(x).data
         last_row = logits[0, -1] if logits.ndim == 3 else logits[0]
-        context.append(sample_next(last_row, temperature=temperature,
-                                    top_k=top_k, rng=rng))
+        context.append(
+            sample_next(last_row, temperature=temperature, top_k=top_k, rng=rng)
+        )
     return tokenizer.decode(context)

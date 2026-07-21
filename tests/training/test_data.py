@@ -5,8 +5,9 @@ from pyllm.training.data import get_batch
 
 def test_sequence_batch_shapes_and_shift():
     data = np.arange(20)
-    x, y = get_batch(data, block_size=4, batch_size=3, mode="sequence",
-                     rng=np.random.default_rng(0))
+    x, y = get_batch(
+        data, block_size=4, batch_size=3, mode="sequence", rng=np.random.default_rng(0)
+    )
     assert x.shape == (3, 4)
     assert y.shape == (3, 4)
     # y is x shifted forward by one everywhere
@@ -16,8 +17,9 @@ def test_sequence_batch_shapes_and_shift():
 
 def test_single_batch_shapes_and_target():
     data = np.arange(20)
-    x, y = get_batch(data, block_size=4, batch_size=3, mode="single",
-                     rng=np.random.default_rng(0))
+    x, y = get_batch(
+        data, block_size=4, batch_size=3, mode="single", rng=np.random.default_rng(0)
+    )
     assert x.shape == (3, 4)
     assert y.shape == (3,)
     # target is the token right after the window (window ends at x[:, -1])

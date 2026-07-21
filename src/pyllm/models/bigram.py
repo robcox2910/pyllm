@@ -1,5 +1,4 @@
-from pyllm.nn import Embedding
-from pyllm.nn import Module
+from pyllm.nn import Embedding, Module
 
 
 class Bigram(Module):

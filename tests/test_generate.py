@@ -1,9 +1,7 @@
 import numpy as np
 
-from pyllm.generate import generate
-from pyllm.generate import sample_next
-from pyllm.models import GPT
-from pyllm.models import MLP
+from pyllm.generate import generate, sample_next
+from pyllm.models import GPT, MLP
 from pyllm.tokenizer import CharTokenizer
 
 
@@ -15,8 +13,7 @@ def test_greedy_picks_argmax():
 def test_top_k_1_is_effectively_greedy():
     logits = np.array([0.1, 5.0, -2.0, 0.3])
     rng = np.random.default_rng(0)
-    picks = {sample_next(logits, temperature=1.0, top_k=1, rng=rng)
-             for _ in range(20)}
+    picks = {sample_next(logits, temperature=1.0, top_k=1, rng=rng) for _ in range(20)}
     assert picks == {1}  # only the single top token is ever allowed
 
 
@@ -38,10 +35,17 @@ def test_sampling_stays_in_vocab_range():
 def test_generate_returns_prompt_plus_new_tokens():
     text = "abcde"
     tok = CharTokenizer(text)
-    model = GPT(vocab_size=tok.vocab_size, block_size=8, embed_dim=8,
-                num_heads=2, num_layers=1, rng=np.random.default_rng(0))
-    out = generate(model, tok, prompt="a", max_new_tokens=5,
-                   rng=np.random.default_rng(0))
+    model = GPT(
+        vocab_size=tok.vocab_size,
+        block_size=8,
+        embed_dim=8,
+        num_heads=2,
+        num_layers=1,
+        rng=np.random.default_rng(0),
+    )
+    out = generate(
+        model, tok, prompt="a", max_new_tokens=5, rng=np.random.default_rng(0)
+    )
     assert out.startswith("a")
     assert len(out) == 1 + 5  # prompt char + 5 generated
 
@@ -49,10 +53,17 @@ def test_generate_returns_prompt_plus_new_tokens():
 def test_generate_only_emits_known_characters():
     text = "pokemon"
     tok = CharTokenizer(text)
-    model = GPT(vocab_size=tok.vocab_size, block_size=8, embed_dim=8,
-                num_heads=2, num_layers=1, rng=np.random.default_rng(0))
-    out = generate(model, tok, prompt="p", max_new_tokens=20,
-                   rng=np.random.default_rng(1))
+    model = GPT(
+        vocab_size=tok.vocab_size,
+        block_size=8,
+        embed_dim=8,
+        num_heads=2,
+        num_layers=1,
+        rng=np.random.default_rng(0),
+    )
+    out = generate(
+        model, tok, prompt="p", max_new_tokens=20, rng=np.random.default_rng(1)
+    )
     assert set(out).issubset(set(text))
 
 
@@ -60,10 +71,17 @@ def test_generate_sequence_model_with_empty_prompt():
     # A GPT with an empty prompt must seed itself, not crash on an empty window.
     text = "pikachu"
     tok = CharTokenizer(text)
-    model = GPT(vocab_size=tok.vocab_size, block_size=8, embed_dim=8,
-                num_heads=2, num_layers=1, rng=np.random.default_rng(0))
-    out = generate(model, tok, prompt="", max_new_tokens=6,
-                   rng=np.random.default_rng(0))
+    model = GPT(
+        vocab_size=tok.vocab_size,
+        block_size=8,
+        embed_dim=8,
+        num_heads=2,
+        num_layers=1,
+        rng=np.random.default_rng(0),
+    )
+    out = generate(
+        model, tok, prompt="", max_new_tokens=6, rng=np.random.default_rng(0)
+    )
     assert len(out) == 6
     assert set(out).issubset(set(text))
 
@@ -71,10 +89,16 @@ def test_generate_sequence_model_with_empty_prompt():
 def test_generate_works_for_single_mode_model_with_short_prompt():
     text = "abcdef"
     tok = CharTokenizer(text)
-    model = MLP(vocab_size=tok.vocab_size, block_size=3, embed_dim=8,
-                hidden_dim=16, rng=np.random.default_rng(0))
+    model = MLP(
+        vocab_size=tok.vocab_size,
+        block_size=3,
+        embed_dim=8,
+        hidden_dim=16,
+        rng=np.random.default_rng(0),
+    )
     # empty prompt must still work (left-pad the window)
-    out = generate(model, tok, prompt="", max_new_tokens=4,
-                   rng=np.random.default_rng(0))
+    out = generate(
+        model, tok, prompt="", max_new_tokens=4, rng=np.random.default_rng(0)
+    )
     assert len(out) == 4
     assert set(out).issubset(set(text))

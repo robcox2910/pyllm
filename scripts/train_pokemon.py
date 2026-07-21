@@ -7,8 +7,7 @@ Run once with `uv run python scripts/train_pokemon.py`; the resulting
 import numpy as np
 
 from pyllm.checkpoint import save
-from pyllm.data import POKEMON_CHECKPOINT
-from pyllm.data import load_corpus
+from pyllm.data import POKEMON_CHECKPOINT, load_corpus
 from pyllm.generate import generate
 from pyllm.models import GPT
 from pyllm.tokenizer import CharTokenizer
@@ -20,10 +19,15 @@ def build_and_train(rng):
     text = load_corpus("pokemon")
     tokenizer = CharTokenizer(text)
     data = np.array(tokenizer.encode(text))
-    model = GPT(vocab_size=tokenizer.vocab_size, block_size=16, embed_dim=48,
-                num_heads=4, num_layers=2, rng=rng)
-    train(model, data, steps=2500, batch_size=32, lr=3e-3, rng=rng,
-          log_every=250)
+    model = GPT(
+        vocab_size=tokenizer.vocab_size,
+        block_size=16,
+        embed_dim=48,
+        num_heads=4,
+        num_layers=2,
+        rng=rng,
+    )
+    train(model, data, steps=2500, batch_size=32, lr=3e-3, rng=rng, log_every=250)
     return model, tokenizer
 
 
@@ -32,8 +36,14 @@ def main():
     model, tokenizer = build_and_train(rng)
     save(POKEMON_CHECKPOINT, model, tokenizer)
     print(f"saved checkpoint to {POKEMON_CHECKPOINT}")
-    sample = generate(model, tokenizer, prompt="", max_new_tokens=120,
-                      temperature=0.8, rng=np.random.default_rng(0))
+    sample = generate(
+        model,
+        tokenizer,
+        prompt="",
+        max_new_tokens=120,
+        temperature=0.8,
+        rng=np.random.default_rng(0),
+    )
     print("--- sample dream ---")
     print(sample)
 

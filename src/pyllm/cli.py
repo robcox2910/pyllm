@@ -3,14 +3,10 @@ from pathlib import Path
 
 import numpy as np
 
-from pyllm.checkpoint import load
-from pyllm.checkpoint import save
-from pyllm.data import POKEMON_CHECKPOINT
-from pyllm.data import load_corpus
+from pyllm.checkpoint import load, save
+from pyllm.data import POKEMON_CHECKPOINT, load_corpus
 from pyllm.generate import generate
-from pyllm.models import GPT
-from pyllm.models import MLP
-from pyllm.models import Bigram
+from pyllm.models import GPT, MLP, Bigram
 from pyllm.tokenizer import CharTokenizer
 from pyllm.training import train
 
@@ -28,9 +24,15 @@ def run_generate(args, out=print):
     rng = np.random.default_rng(args.seed)
     checkpoint = args.checkpoint if args.checkpoint else POKEMON_CHECKPOINT
     model, tokenizer = load(checkpoint)
-    text = generate(model, tokenizer, prompt=args.prompt,
-                    max_new_tokens=args.max_new_tokens,
-                    temperature=args.temperature, top_k=args.top_k, rng=rng)
+    text = generate(
+        model,
+        tokenizer,
+        prompt=args.prompt,
+        max_new_tokens=args.max_new_tokens,
+        temperature=args.temperature,
+        top_k=args.top_k,
+        rng=rng,
+    )
     out(text)
     return 0
 
@@ -46,11 +48,24 @@ def run_train(args, out=print):
     elif args.model == "mlp":
         model = MLP(tokenizer.vocab_size, block_size=3, rng=rng)
     else:
-        model = GPT(tokenizer.vocab_size, block_size=16, embed_dim=64,
-                    num_heads=4, num_layers=3, rng=rng)
-    losses = train(model, data, steps=args.steps, batch_size=args.batch_size,
-                   lr=args.lr, rng=rng, log_every=max(1, args.steps // 10),
-                   log=out)
+        model = GPT(
+            tokenizer.vocab_size,
+            block_size=16,
+            embed_dim=64,
+            num_heads=4,
+            num_layers=3,
+            rng=rng,
+        )
+    losses = train(
+        model,
+        data,
+        steps=args.steps,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        rng=rng,
+        log_every=max(1, args.steps // 10),
+        log=out,
+    )
     save(args.out, model, tokenizer)
     out(f"final loss {losses[-1]:.4f}; saved checkpoint to {args.out}")
     return 0
@@ -68,8 +83,9 @@ def run_tokenize(args, out=print):
 
 def main(argv=None):
     """Entry point for `pyllm`: no subcommand generates; `train`/`tokenize` too."""
-    parser = argparse.ArgumentParser(prog="pyllm",
-                                     description="A tiny LLM you can read.")
+    parser = argparse.ArgumentParser(
+        prog="pyllm", description="A tiny LLM you can read."
+    )
     parser.set_defaults(func=run_generate)
     parser.add_argument("--prompt", default="")
     parser.add_argument("--max-new-tokens", type=int, default=100)
@@ -81,8 +97,7 @@ def main(argv=None):
     sub = parser.add_subparsers()
 
     p_train = sub.add_parser("train", help="train your own model")
-    p_train.add_argument("--model", choices=["bigram", "mlp", "gpt"],
-                         default="gpt")
+    p_train.add_argument("--model", choices=["bigram", "mlp", "gpt"], default="gpt")
     p_train.add_argument("--corpus", default="pokemon")
     p_train.add_argument("--steps", type=int, default=1000)
     p_train.add_argument("--batch-size", type=int, default=32)

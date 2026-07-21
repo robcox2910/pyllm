@@ -18,9 +18,9 @@ def get_batch(data, block_size, batch_size, mode="sequence", rng=None):
     data = np.asarray(data)
     max_start = len(data) - block_size - 1
     starts = rng.integers(0, max_start + 1, size=batch_size)
-    x = np.stack([data[s:s + block_size] for s in starts])
+    x = np.stack([data[s : s + block_size] for s in starts])
     if mode == "sequence":
-        y = np.stack([data[s + 1:s + 1 + block_size] for s in starts])
+        y = np.stack([data[s + 1 : s + 1 + block_size] for s in starts])
     else:  # "single"
         y = np.array([data[s + block_size] for s in starts])
     return x.astype(np.int64), y.astype(np.int64)

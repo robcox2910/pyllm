@@ -17,14 +17,22 @@ def build_model(config, rng=None):
     """
     kind = config["kind"]
     if kind == "bigram":
-        return Bigram(config["vocab_size"], block_size=config["block_size"],
-                      rng=rng)
+        return Bigram(config["vocab_size"], block_size=config["block_size"], rng=rng)
     if kind == "mlp":
-        return MLP(config["vocab_size"], block_size=config["block_size"],
-                   embed_dim=config["embed_dim"],
-                   hidden_dim=config["hidden_dim"], rng=rng)
+        return MLP(
+            config["vocab_size"],
+            block_size=config["block_size"],
+            embed_dim=config["embed_dim"],
+            hidden_dim=config["hidden_dim"],
+            rng=rng,
+        )
     if kind == "gpt":
-        return GPT(config["vocab_size"], block_size=config["block_size"],
-                   embed_dim=config["embed_dim"], num_heads=config["num_heads"],
-                   num_layers=config["num_layers"], rng=rng)
+        return GPT(
+            config["vocab_size"],
+            block_size=config["block_size"],
+            embed_dim=config["embed_dim"],
+            num_heads=config["num_heads"],
+            num_layers=config["num_layers"],
+            rng=rng,
+        )
     raise ValueError(f"unknown model kind: {kind!r}")

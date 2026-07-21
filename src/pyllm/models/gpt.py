@@ -1,11 +1,6 @@
 import numpy as np
 
-from pyllm.nn import Embedding
-from pyllm.nn import LayerNorm
-from pyllm.nn import Linear
-from pyllm.nn import Module
-from pyllm.nn import TransformerBlock
-from pyllm.nn import embedding
+from pyllm.nn import Embedding, LayerNorm, Linear, Module, TransformerBlock, embedding
 
 
 class GPT(Module):
@@ -19,8 +14,15 @@ class GPT(Module):
     position into scores for the next character. Stack more blocks -> smarter.
     """
 
-    def __init__(self, vocab_size, block_size=8, embed_dim=32, num_heads=4,
-                 num_layers=2, rng=None):
+    def __init__(
+        self,
+        vocab_size,
+        block_size=8,
+        embed_dim=32,
+        num_heads=4,
+        num_layers=2,
+        rng=None,
+    ):
         self.vocab_size = vocab_size
         self.block_size = block_size
         self.embed_dim = embed_dim
