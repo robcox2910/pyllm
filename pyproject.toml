@@ -25,6 +25,9 @@ Repository = "https://github.com/robcox2910/pyllm"
 Issues = "https://github.com/robcox2910/pyllm/issues"
 Documentation = "https://robcox2910.github.io/pyllm/"
 
+[project.scripts]
+pyllm = "pyllm.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.4",
@@ -49,6 +52,10 @@ version-file = "src/pyllm/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pyllm"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/pyllm/data/pokemon_corpus.txt" = "pyllm/data/pokemon_corpus.txt"
+"src/pyllm/data/pokemon.npz" = "pyllm/data/pokemon.npz"
 
 [tool.ruff]
 line-length = 88
