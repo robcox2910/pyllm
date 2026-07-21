@@ -293,6 +293,23 @@ class Tensor:
         out._backward = _backward
         return out
 
+    def reshape(self, shape):
+        """Rearrange the same numbers into a differently shaped box.
+
+        Like tipping a tray of 6 buns into a 2x3 arrangement or a 3x2 one --
+        it's the exact same buns, just laid out differently. The MLP uses this
+        to lay each position's little embeddings out in one long row before the
+        first Linear layer. Breadcrumb rule: the gradient just gets folded back
+        into the original shape.
+        """
+        out = Tensor(self.data.reshape(shape), (self,), "reshape")
+
+        def _backward():
+            self.grad += out.grad.reshape(self.data.shape)
+
+        out._backward = _backward
+        return out
+
     def backward(self):
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
