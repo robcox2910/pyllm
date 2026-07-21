@@ -39,6 +39,10 @@ dev = [
     "pip-audit>=2.10.0",
 ]
 docs = ["mkdocs-material>=9.5"]
+pebble = ["pebble-lang"]
+
+[tool.uv.sources]
+pebble-lang = { path = "../pebble-lang", editable = true }
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
