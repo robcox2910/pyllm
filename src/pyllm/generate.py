@@ -49,7 +49,10 @@ def generate(model, tokenizer, prompt="", max_new_tokens=100, temperature=1.0,
             # MLP needs exactly block_size tokens; left-pad short windows.
             if len(window) < model.block_size:
                 window = [0] * (model.block_size - len(window)) + window
-        x = np.array([window])
+        elif not window:
+            # Sequence models with an empty prompt need a seed token to read.
+            window = [0]
+        x = np.array([window], dtype=np.int64)
         logits = model(x).data
         last_row = logits[0, -1] if logits.ndim == 3 else logits[0]
         context.append(sample_next(last_row, temperature=temperature,

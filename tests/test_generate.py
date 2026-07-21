@@ -56,6 +56,18 @@ def test_generate_only_emits_known_characters():
     assert set(out).issubset(set(text))
 
 
+def test_generate_sequence_model_with_empty_prompt():
+    # A GPT with an empty prompt must seed itself, not crash on an empty window.
+    text = "pikachu"
+    tok = CharTokenizer(text)
+    model = GPT(vocab_size=tok.vocab_size, block_size=8, embed_dim=8,
+                num_heads=2, num_layers=1, rng=np.random.default_rng(0))
+    out = generate(model, tok, prompt="", max_new_tokens=6,
+                   rng=np.random.default_rng(0))
+    assert len(out) == 6
+    assert set(out).issubset(set(text))
+
+
 def test_generate_works_for_single_mode_model_with_short_prompt():
     text = "abcdef"
     tok = CharTokenizer(text)
