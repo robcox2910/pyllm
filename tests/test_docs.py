@@ -24,3 +24,19 @@ def test_plan2_concept_docs_exist_and_cover_key_ideas():
         text = doc.read_text().lower()
         for idea in ideas:
             assert idea in text, f"{path} should explain '{idea}'"
+
+
+def test_plan3_concept_docs_exist_and_cover_key_ideas():
+    from pathlib import Path
+
+    checks = {
+        "docs/concepts/how-a-model-learns.md": ["loss", "gradient", "analogy"],
+        "docs/concepts/sampling.md": ["temperature", "top-k", "analogy"],
+        "docs/concepts/transformer.md": ["attention", "block", "analogy"],
+    }
+    for path, ideas in checks.items():
+        doc = Path(path)
+        assert doc.exists(), f"RULE #1: missing concept doc {path}"
+        text = doc.read_text().lower()
+        for idea in ideas:
+            assert idea in text, f"{path} should explain '{idea}'"
