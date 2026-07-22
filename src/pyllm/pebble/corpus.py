@@ -6,10 +6,25 @@ docs (keeping only the ones that actually parse), and glue them into one text
 file the model can learn from.
 """
 
+import re
+
 from pyllm.pebble import PEBBLE_AVAILABLE
 from pyllm.pebble.generator import random_program
 from pyllm.pebble.harvest import harvest_dir
 from pyllm.pebble.render import render
+
+_BLANK_LINES = re.compile(r"\n\s*\n+")
+
+
+def _one_program(source):
+    """Squeeze a program onto contiguous lines so a blank line always means "new program".
+
+    Pebble ignores blank lines between statements, so removing them keeps the
+    program valid -- but it lets us use a single blank line as an unambiguous
+    fence between programs in the corpus (and when splitting model output back
+    into programs to score).
+    """
+    return _BLANK_LINES.sub("\n", source.strip())
 
 
 def canonicalize(source):
@@ -39,4 +54,4 @@ def build_corpus(rng, num_generated=400, harvest_paths=(), canonical=False):
             programs.extend(block for block in harvest_dir(path) if is_valid(block))
     if canonical:
         programs = [canonicalize(p) for p in programs]
-    return "\n\n".join(p.strip() for p in programs) + "\n"
+    return "\n\n".join(_one_program(p) for p in programs) + "\n"
