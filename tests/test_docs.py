@@ -40,3 +40,13 @@ def test_plan3_concept_docs_exist_and_cover_key_ideas():
         text = doc.read_text().lower()
         for idea in ideas:
             assert idea in text, f"{path} should explain '{idea}'"
+
+
+def test_plan4_concept_doc_exists_and_covers_key_ideas():
+    from pathlib import Path
+
+    doc = Path("docs/concepts/grow-your-own-data.md")
+    assert doc.exists(), "RULE #1: missing concept doc grow-your-own-data.md"
+    text = doc.read_text().lower()
+    for idea in ["harvest", "generate", "grade", "parser", "analogy"]:
+        assert idea in text, f"grow-your-own-data.md should explain '{idea}'"
