@@ -6,21 +6,23 @@ operator precedence -- Pebble's own formatter tidies away the extra brackets
 afterwards.
 """
 
-from pyllm.pebble.ast import Assign
-from pyllm.pebble.ast import Bin
-from pyllm.pebble.ast import Bool
-from pyllm.pebble.ast import Call
-from pyllm.pebble.ast import For
-from pyllm.pebble.ast import Func
-from pyllm.pebble.ast import If
-from pyllm.pebble.ast import Let
-from pyllm.pebble.ast import Num
-from pyllm.pebble.ast import Print
-from pyllm.pebble.ast import Return
-from pyllm.pebble.ast import Str
-from pyllm.pebble.ast import Unary
-from pyllm.pebble.ast import Var
-from pyllm.pebble.ast import While
+from pyllm.pebble.ast import (
+    Assign,
+    Bin,
+    Bool,
+    Call,
+    For,
+    Func,
+    If,
+    Let,
+    Num,
+    Print,
+    Return,
+    Str,
+    Unary,
+    Var,
+    While,
+)
 
 _INDENT = "    "
 

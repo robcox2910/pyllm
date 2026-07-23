@@ -17,7 +17,7 @@ _BLANK_LINES = re.compile(r"\n\s*\n+")
 
 
 def _one_program(source):
-    """Squeeze a program onto contiguous lines so a blank line always means "new program".
+    """Squeeze out blank lines so one blank line always marks a new program.
 
     Pebble ignores blank lines between statements, so removing them keeps the
     program valid -- but it lets us use a single blank line as an unambiguous

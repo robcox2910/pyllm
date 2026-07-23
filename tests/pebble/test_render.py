@@ -1,18 +1,20 @@
-from pyllm.pebble.ast import Assign
-from pyllm.pebble.ast import Bin
-from pyllm.pebble.ast import Bool
-from pyllm.pebble.ast import Call
-from pyllm.pebble.ast import For
-from pyllm.pebble.ast import Func
-from pyllm.pebble.ast import If
-from pyllm.pebble.ast import Let
-from pyllm.pebble.ast import Num
-from pyllm.pebble.ast import Print
-from pyllm.pebble.ast import Program
-from pyllm.pebble.ast import Return
-from pyllm.pebble.ast import Unary
-from pyllm.pebble.ast import Var
-from pyllm.pebble.ast import While
+from pyllm.pebble.ast import (
+    Assign,
+    Bin,
+    Bool,
+    Call,
+    For,
+    Func,
+    If,
+    Let,
+    Num,
+    Print,
+    Program,
+    Return,
+    Unary,
+    Var,
+    While,
+)
 from pyllm.pebble.render import render
 
 
@@ -32,39 +34,26 @@ def test_render_bool_and_unary():
 
 
 def test_render_if_else_block_is_brace_delimited():
-    prog = Program([
-        If(Bin(">", Var("x"), Num(0)),
-           [Print(Var("x"))],
-           [Print(Num(0))]),
-    ])
-    assert render(prog) == (
-        "if (x > 0) {\n"
-        "    print(x)\n"
-        "} else {\n"
-        "    print(0)\n"
-        "}\n"
+    prog = Program(
+        [
+            If(Bin(">", Var("x"), Num(0)), [Print(Var("x"))], [Print(Num(0))]),
+        ]
     )
+    assert render(prog) == ("if (x > 0) {\n    print(x)\n} else {\n    print(0)\n}\n")
 
 
 def test_render_while_and_for_and_call():
-    prog = Program([
-        While(Bool(True), [Assign("x", Call("step", [Var("x")]))]),
-        For("i", Num(3), [Print(Var("i"))]),
-    ])
+    prog = Program(
+        [
+            While(Bool(True), [Assign("x", Call("step", [Var("x")]))]),
+            For("i", Num(3), [Print(Var("i"))]),
+        ]
+    )
     assert render(prog) == (
-        "while true {\n"
-        "    x = step(x)\n"
-        "}\n"
-        "for i in range(3) {\n"
-        "    print(i)\n"
-        "}\n"
+        "while true {\n    x = step(x)\n}\nfor i in range(3) {\n    print(i)\n}\n"
     )
 
 
 def test_render_function_def_and_return():
     prog = Program([Func("add", ["a", "b"], [Return(Bin("+", Var("a"), Var("b")))])])
-    assert render(prog) == (
-        "fn add(a, b) {\n"
-        "    return (a + b)\n"
-        "}\n"
-    )
+    assert render(prog) == ("fn add(a, b) {\n    return (a + b)\n}\n")

@@ -43,8 +43,8 @@ class Bin:
     """Two values joined by an operator, like `a + b` or `x > 0`."""
 
     op: str
-    left: "Expr"
-    right: "Expr"
+    left: Expr
+    right: Expr
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ class Unary:
     """One value with an operator in front, like `-x` or `not done`."""
 
     op: str
-    operand: "Expr"
+    operand: Expr
 
 
 @dataclass(frozen=True)

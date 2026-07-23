@@ -159,16 +159,21 @@ def main(argv=None):
     p_pebble.add_argument("--top-k", type=int, default=None)
     p_pebble.add_argument("--checkpoint", default=None)
     p_pebble.add_argument("--seed", type=int, default=None)
-    p_pebble.add_argument("--score", action="store_true",
-                          help="report what %% of the output parses")
+    p_pebble.add_argument(
+        "--score", action="store_true", help="report what %% of the output parses"
+    )
     p_pebble.set_defaults(func=run_pebble)
 
     p_corpus = sub.add_parser("gen-corpus", help="grow a synthetic Pebble corpus")
     p_corpus.add_argument("--num-generated", type=int, default=400)
-    p_corpus.add_argument("--harvest", default=None,
-                          help="directory of *.md docs to mine for real Pebble")
-    p_corpus.add_argument("--canonical", action="store_true",
-                          help="run each program through the Pebble formatter")
+    p_corpus.add_argument(
+        "--harvest", default=None, help="directory of *.md docs to mine for real Pebble"
+    )
+    p_corpus.add_argument(
+        "--canonical",
+        action="store_true",
+        help="run each program through the Pebble formatter",
+    )
     p_corpus.add_argument("--out", default="pebble_corpus.txt")
     p_corpus.add_argument("--seed", type=int, default=None)
     p_corpus.set_defaults(func=run_gen_corpus)

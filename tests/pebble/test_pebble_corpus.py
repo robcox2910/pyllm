@@ -21,6 +21,13 @@ def test_build_corpus_is_deterministic():
 def test_public_api_exports():
     import pyllm.pebble as pebble
 
-    for name in ["random_program", "render", "build_corpus", "is_valid",
-                 "parse_rate", "harvest_dir", "PEBBLE_AVAILABLE"]:
+    for name in [
+        "random_program",
+        "render",
+        "build_corpus",
+        "is_valid",
+        "parse_rate",
+        "harvest_dir",
+        "PEBBLE_AVAILABLE",
+    ]:
         assert hasattr(pebble, name), f"pyllm.pebble is missing {name}"

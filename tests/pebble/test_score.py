@@ -5,8 +5,10 @@ pytest.importorskip("pebble")  # oracle-backed tests need pebble-lang installed
 
 from pyllm.pebble.generator import random_program  # noqa: E402
 from pyllm.pebble.render import render  # noqa: E402
-from pyllm.pebble.score import is_valid  # noqa: E402
-from pyllm.pebble.score import parse_rate  # noqa: E402
+from pyllm.pebble.score import (
+    is_valid,  # noqa: E402
+    parse_rate,  # noqa: E402
+)
 
 
 def test_is_valid_accepts_known_good():

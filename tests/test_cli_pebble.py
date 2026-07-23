@@ -20,8 +20,9 @@ def test_pebble_command_score_reports_rate_when_available(capsys):
 
 def test_gen_corpus_writes_a_file(tmp_path):
     dest = tmp_path / "corpus.txt"
-    code = main(["gen-corpus", "--num-generated", "10", "--out", str(dest),
-                 "--seed", "0"])
+    code = main(
+        ["gen-corpus", "--num-generated", "10", "--out", str(dest), "--seed", "0"]
+    )
     assert code == 0
     assert dest.exists()
     assert dest.read_text(encoding="utf-8").count("let ") >= 10

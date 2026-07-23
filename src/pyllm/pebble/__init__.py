@@ -9,8 +9,7 @@ from pyllm.pebble.corpus import build_corpus  # noqa: E402
 from pyllm.pebble.generator import random_program  # noqa: E402
 from pyllm.pebble.harvest import harvest_dir  # noqa: E402
 from pyllm.pebble.render import render  # noqa: E402
-from pyllm.pebble.score import is_valid  # noqa: E402
-from pyllm.pebble.score import parse_rate  # noqa: E402
+from pyllm.pebble.score import is_valid, parse_rate  # noqa: E402
 
 __all__ = [
     "PEBBLE_AVAILABLE",

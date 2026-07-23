@@ -7,20 +7,22 @@ which is exactly how we manufacture unlimited, always-correct training data when
 there's no real Pebble code to be found.
 """
 
-from pyllm.pebble.ast import Assign
-from pyllm.pebble.ast import Bin
-from pyllm.pebble.ast import Call
-from pyllm.pebble.ast import For
-from pyllm.pebble.ast import Func
-from pyllm.pebble.ast import If
-from pyllm.pebble.ast import Let
-from pyllm.pebble.ast import Num
-from pyllm.pebble.ast import Print
-from pyllm.pebble.ast import Program
-from pyllm.pebble.ast import Return
-from pyllm.pebble.ast import Unary
-from pyllm.pebble.ast import Var
-from pyllm.pebble.ast import While
+from pyllm.pebble.ast import (
+    Assign,
+    Bin,
+    Call,
+    For,
+    Func,
+    If,
+    Let,
+    Num,
+    Print,
+    Program,
+    Return,
+    Unary,
+    Var,
+    While,
+)
 
 _VARS = ["x", "y", "z", "a", "b", "c", "n", "total", "count", "result", "value"]
 _FUNCS = ["compute", "helper", "calc", "combine", "step", "make"]
@@ -46,8 +48,11 @@ def _rand_condition(rng, names, depth):
     """A truthy expression for `if`/`while` -- a comparison or a boolean combo."""
     if depth > 0 and rng.random() < 0.3:
         op = _choice(rng, ["and", "or"])
-        return Bin(op, _rand_condition(rng, names, depth - 1),
-                   _rand_condition(rng, names, depth - 1))
+        return Bin(
+            op,
+            _rand_condition(rng, names, depth - 1),
+            _rand_condition(rng, names, depth - 1),
+        )
     if rng.random() < 0.15:
         return Unary("not", _rand_condition(rng, names, 0))
     left = _rand_value_expr(rng, names, depth)
@@ -90,29 +95,32 @@ def _rand_stmt(rng, names, depth):
     roll = rng.random()
     if roll < 0.4:
         orelse = _rand_block(rng, names, depth - 1, 1) if rng.random() < 0.5 else None
-        return If(_rand_condition(rng, names, 1),
-                  _rand_block(rng, names, depth - 1, 2), orelse)
+        return If(
+            _rand_condition(rng, names, 1),
+            _rand_block(rng, names, depth - 1, 2),
+            orelse,
+        )
     if roll < 0.7:
-        return While(_rand_condition(rng, names, 1),
-                     _rand_block(rng, names, depth - 1, 2))
+        return While(
+            _rand_condition(rng, names, 1), _rand_block(rng, names, depth - 1, 2)
+        )
     var = _choice(rng, ["i", "j", "k"])
-    return For(var, Num(int(rng.integers(1, 6))),
-               _rand_block(rng, names + [var], depth - 1, 2))
+    return For(
+        var, Num(int(rng.integers(1, 6))), _rand_block(rng, names + [var], depth - 1, 2)
+    )
 
 
 def random_program(rng, num_statements=8, max_depth=2):
     """Build one random valid Pebble program of roughly `num_statements` steps."""
     names = []
-    statements = []
+    statements: list = []
     # Seed a couple of variables so later statements have something to reference.
     for _ in range(2):
         statements.append(_rand_simple_stmt(rng, names))
     # Optionally define a small function up top.
     if rng.random() < 0.4:
-        params = [
-            _choice(rng, ["a", "b", "n"]) for _ in range(int(rng.integers(1, 3)))
-        ]
-        body = _rand_block(rng, list(params), 1, 2)
+        params = [_choice(rng, ["a", "b", "n"]) for _ in range(int(rng.integers(1, 3)))]
+        body: list = _rand_block(rng, list(params), 1, 2)
         body.append(Return(_rand_value_expr(rng, list(params), 1)))
         statements.append(Func(_choice(rng, _FUNCS), params, body))
     while len(statements) < num_statements:

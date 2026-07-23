@@ -46,6 +46,33 @@ final loss 0.42; saved checkpoint to mine.npz
 $ uv run pyllm --checkpoint mine.npz --max-new-tokens 60
 ```
 
+## The flagship: teach PyLLM to write Pebble
+
+There's no corpus of [Pebble](https://github.com/robcox2910/pebble-lang) code in
+the wild — so we *grow our own*. A generator emits **random-but-provably-valid**
+Pebble ASTs (100% parse under Pebble's own parser), a harvester scrapes real
+snippets from Pebble's docs, and — because we own the language toolchain — we
+**grade** the trained model by running its output back through Pebble's real
+parser and reporting what percentage parses:
+
+```console
+$ uv run pyllm pebble --seed 7 --temperature 0.5 --score
+let total = total * z * (35 % 87)
+print(compute())
+let a = (y - result) % (37 + result)
+...
+parse rate: 33.3% of 3 programs
+```
+
+The bundled checkpoint is *tiny* (a few-minute char-level GPT), so it writes
+Pebble-*flavoured* code and only some of it parses — and that's the whole point:
+the parser is an honest, objective judge, so you can watch the score go up as you
+train longer or bigger. Almost no LLM project can grade its own output like this.
+
+Grow a fresh synthetic corpus with `uv run pyllm gen-corpus`. Live scoring needs
+the optional `pebble-lang` dependency (`uv sync --all-extras`); generation and
+training work without it. See [`docs/concepts/grow-your-own-data.md`](docs/concepts/grow-your-own-data.md).
+
 ## See how text becomes tokens
 
 ```console
