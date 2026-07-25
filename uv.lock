@@ -571,6 +571,23 @@ wheels = [
 ]
 
 [[package]]
+name = "pebble-lang"
+source = { editable = "../pebble-lang" }
+
+[package.metadata]
+requires-dist = [
+    { name = "commitizen", marker = "extra == 'dev'", specifier = ">=4.4.0" },
+    { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
+    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.400" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.3" },
+]
+provides-extras = ["dev", "docs"]
+
+[[package]]
 name = "pip"
 version = "26.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -712,12 +729,16 @@ dev = [
 docs = [
     { name = "mkdocs-material" },
 ]
+pebble = [
+    { name = "pebble-lang" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "commitizen", marker = "extra == 'dev'", specifier = ">=4.4.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "numpy", specifier = ">=2.1" },
+    { name = "pebble-lang", marker = "extra == 'pebble'", editable = "../pebble-lang" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.400" },
@@ -725,7 +746,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.3" },
 ]
-provides-extras = ["dev", "docs"]
+provides-extras = ["dev", "docs", "pebble"]
 
 [[package]]
 name = "pymdown-extensions"

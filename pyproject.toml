@@ -39,6 +39,10 @@ dev = [
     "pip-audit>=2.10.0",
 ]
 docs = ["mkdocs-material>=9.5"]
+pebble = ["pebble-lang"]
+
+[tool.uv.sources]
+pebble-lang = { path = "../pebble-lang", editable = true }
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -56,6 +60,8 @@ packages = ["src/pyllm"]
 [tool.hatch.build.targets.wheel.force-include]
 "src/pyllm/data/pokemon_corpus.txt" = "pyllm/data/pokemon_corpus.txt"
 "src/pyllm/data/pokemon.npz" = "pyllm/data/pokemon.npz"
+"src/pyllm/data/pebble_corpus.txt" = "pyllm/data/pebble_corpus.txt"
+"src/pyllm/data/pebble.npz" = "pyllm/data/pebble.npz"
 
 [tool.ruff]
 line-length = 88

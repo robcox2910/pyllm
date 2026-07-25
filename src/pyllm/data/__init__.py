@@ -4,6 +4,7 @@ from pathlib import Path
 
 CORPUS_DIR = Path(__file__).parent
 POKEMON_CHECKPOINT = CORPUS_DIR / "pokemon.npz"
+PEBBLE_CHECKPOINT = CORPUS_DIR / "pebble.npz"
 
 
 def load_corpus(name="pokemon"):
