@@ -32,8 +32,9 @@ def test_head_parameters_exclude_mask():
 
 
 def test_multihead_output_shape():
-    mha = MultiHeadAttention(embed_dim=8, num_heads=2, block_size=16,
-                             rng=np.random.default_rng(0))
+    mha = MultiHeadAttention(
+        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
+    )
     x = Tensor(np.ones((2, 5, 8)))
     assert mha(x).shape == (2, 5, 8)
 
@@ -44,7 +45,8 @@ def test_multihead_requires_divisible_dim():
 
 
 def test_multihead_collects_all_head_and_proj_params():
-    mha = MultiHeadAttention(embed_dim=8, num_heads=2, block_size=16,
-                             rng=np.random.default_rng(0))
+    mha = MultiHeadAttention(
+        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
+    )
     # 2 heads x 3 params + proj (weight + bias) = 6 + 2 = 8
     assert len(mha.parameters()) == 8

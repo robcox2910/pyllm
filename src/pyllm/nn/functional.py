@@ -88,7 +88,7 @@ def gelu(t):
     the autograd engine.
     """
     c = np.sqrt(2.0 / np.pi)
-    inner = (t + (t ** 3) * 0.044715) * c
+    inner = (t + (t**3) * 0.044715) * c
     return (t * 0.5) * (inner.tanh() + 1.0)
 
 

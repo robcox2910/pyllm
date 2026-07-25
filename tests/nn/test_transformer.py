@@ -11,15 +11,17 @@ def test_feedforward_preserves_shape():
 
 
 def test_transformer_block_preserves_shape():
-    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16,
-                             rng=np.random.default_rng(0))
+    block = TransformerBlock(
+        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
+    )
     x = Tensor(np.ones((2, 5, 8)))
     assert block(x).shape == (2, 5, 8)
 
 
 def test_transformer_block_is_causal():
-    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16,
-                             rng=np.random.default_rng(0))
+    block = TransformerBlock(
+        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
+    )
     rng = np.random.default_rng(2)
     base = rng.normal(size=(1, 6, 8))
     changed = base.copy()
@@ -30,8 +32,9 @@ def test_transformer_block_is_causal():
 
 
 def test_transformer_block_gradients_flow_to_input():
-    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16,
-                             rng=np.random.default_rng(0))
+    block = TransformerBlock(
+        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
+    )
     x = Tensor(np.ones((1, 4, 8)))
     block(x).sum().backward()
     assert np.any(x.grad != 0.0)

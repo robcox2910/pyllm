@@ -22,6 +22,6 @@ class LayerNorm(Module):
     def forward(self, x):
         mean = x.mean(axis=-1, keepdims=True)
         centered = x - mean
-        variance = (centered ** 2).mean(axis=-1, keepdims=True)
+        variance = (centered**2).mean(axis=-1, keepdims=True)
         normed = centered / ((variance + self.eps) ** 0.5)
         return normed * self.gamma + self.beta

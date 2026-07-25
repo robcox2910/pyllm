@@ -75,3 +75,9 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 include = ["src", "tests"]
 pythonVersion = "3.14"
 typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+addopts = "--cov=src/pyllm --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+omit = ["src/pyllm/_version.py"]

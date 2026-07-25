@@ -47,7 +47,7 @@ def test_add_scalar_on_right():
 
 def test_add_broadcasting_reduces_grad():
     a = Tensor([[1.0, 2.0], [3.0, 4.0]])  # shape (2, 2)
-    b = Tensor([10.0, 20.0])              # shape (2,) broadcasts
+    b = Tensor([10.0, 20.0])  # shape (2,) broadcasts
     out = a + b
     out.backward()
     # b is used in both rows, so its grad sums across rows.
@@ -82,9 +82,9 @@ def test_matmul_forward():
 
 
 def test_matmul_backward_shapes_and_values():
-    a = Tensor([[1.0, 2.0, 3.0]])      # (1, 3)
+    a = Tensor([[1.0, 2.0, 3.0]])  # (1, 3)
     b = Tensor([[1.0], [1.0], [1.0]])  # (3, 1)
-    out = a @ b                         # (1, 1)
+    out = a @ b  # (1, 1)
     out.backward()
     # d(a@b)/da = out.grad @ b.T ; with out.grad = ones((1,1)) -> b.T = [[1,1,1]]
     assert a.grad.tolist() == [[1.0, 1.0, 1.0]]
@@ -157,7 +157,7 @@ def test_neg_and_sub():
 
 def test_pow_backward():
     a = Tensor([2.0, 3.0])
-    out = a ** 2
+    out = a**2
     assert out.data.tolist() == [4.0, 9.0]
     out.backward()
     assert a.grad.tolist() == [4.0, 6.0]  # d(x^2)/dx = 2x
@@ -169,8 +169,8 @@ def test_truediv_backward():
     out = a / b
     assert out.data.tolist() == [3.0]
     out.backward()
-    assert np.allclose(a.grad, [0.5])     # 1/b
-    assert np.allclose(b.grad, [-1.5])    # -a/b^2
+    assert np.allclose(a.grad, [0.5])  # 1/b
+    assert np.allclose(b.grad, [-1.5])  # -a/b^2
 
 
 def test_rsub_and_rtruediv():
