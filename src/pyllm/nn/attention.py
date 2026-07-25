@@ -27,13 +27,13 @@ class Head(Module):
 
     def forward(self, x):
         seq_len = x.shape[1]
-        q = self.query(x)            # (B, T, head_size)
+        q = self.query(x)  # (B, T, head_size)
         k = self.key(x)
         v = self.value(x)
         scores = (q @ k.transpose()) / np.sqrt(self.head_size)  # (B, T, T)
         scores = scores + self.mask[:seq_len, :seq_len]
         weights = softmax(scores, axis=-1)
-        return weights @ v           # (B, T, head_size)
+        return weights @ v  # (B, T, head_size)
 
 
 class MultiHeadAttention(Module):

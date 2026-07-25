@@ -133,7 +133,7 @@ class Tensor:
         """
         if not isinstance(power, (int, float)):
             raise TypeError("Tensor ** power supports int/float exponents only")
-        out = Tensor(self.data ** power, (self,), f"**{power}")
+        out = Tensor(self.data**power, (self,), f"**{power}")
 
         def _backward():
             self.grad += (power * self.data ** (power - 1)) * out.grad
@@ -148,14 +148,14 @@ class Tensor:
         `a * (b ** -1)`, so gradients flow through multiplication and power.
         """
         other = other if isinstance(other, Tensor) else Tensor(other)
-        return self * (other ** -1)
+        return self * (other**-1)
 
     def __rtruediv__(self, other):
         """Support `scalar / Tensor` — called when the left side isn't a Tensor.
 
         Reorders via power: `c / t` becomes `(t ** -1) * c`.
         """
-        return (self ** -1) * other
+        return (self**-1) * other
 
     def __matmul__(self, other):
         """Combine two tables of numbers — like running many recipes at once.
