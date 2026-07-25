@@ -50,3 +50,17 @@ def test_plan4_concept_doc_exists_and_covers_key_ideas():
     text = doc.read_text().lower()
     for idea in ["harvest", "generate", "grade", "parser", "analogy"]:
         assert idea in text, f"grow-your-own-data.md should explain '{idea}'"
+
+
+def test_concepts_index_links_every_doc():
+    from pathlib import Path
+
+    index = Path("docs/concepts/README.md")
+    assert index.exists(), "concepts index page must exist"
+    text = index.read_text()
+    for doc in [
+        "autograd.md", "tokens.md", "embeddings.md", "attention.md",
+        "how-a-model-learns.md", "sampling.md", "transformer.md",
+        "grow-your-own-data.md",
+    ]:
+        assert doc in text, f"concepts index should link {doc}"
