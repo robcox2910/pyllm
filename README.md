@@ -96,10 +96,38 @@ below it, so you feel *why* each idea exists:
 
 ## Learn the ideas
 
-Kid-friendly explanations live in [`docs/concepts/`](docs/concepts/):
-tokens, embeddings, attention, the breadcrumb trail (autograd), how a model
-learns, sampling, and how a Transformer is built.
+Kid-friendly explanations live in [`docs/concepts/`](docs/concepts/README.md):
+the breadcrumb trail (autograd), tokens, embeddings, attention, how a Transformer
+is built, how a model learns, sampling, and — the flagship lesson — growing your
+own data.
 
-## Related projects
+## Related projects — "from scratch in Python"
 
-Part of the "from scratch in Python" series — PyLLM is **the brain**.
+PyLLM is **the brain** of a family of educational projects, each building a real
+system from scratch to teach how it works. They're tied together by
+**[PyStack](https://github.com/robcox2910/pystack)**, where a Pebble program can
+even `import "llm"` and ask PyLLM to write more code.
+
+| Project | What it teaches | Repository |
+|---------|-----------------|------------|
+| PyOS | Operating systems | [robcox2910/py-os](https://github.com/robcox2910/py-os) |
+| Pebble | Compilers and programming languages | [robcox2910/pebble-lang](https://github.com/robcox2910/pebble-lang) |
+| PyDB | Relational databases | [robcox2910/pydb](https://github.com/robcox2910/pydb) |
+| PyCrypt | Cryptography | [robcox2910/pycrypt](https://github.com/robcox2910/pycrypt) |
+| PyWeb | HTTP web servers | [robcox2910/pyweb](https://github.com/robcox2910/pyweb) |
+| PyNet | Computer networking | [robcox2910/pynet](https://github.com/robcox2910/pynet) |
+| PyGit | Version control | [robcox2910/pygit](https://github.com/robcox2910/pygit) |
+| PySearch | Search engines | [robcox2910/pysearch](https://github.com/robcox2910/pysearch) |
+| PyMQ | Message queues | [robcox2910/pymq](https://github.com/robcox2910/pymq) |
+| **PyLLM** | **Language models (the brain)** | **[robcox2910/pyllm](https://github.com/robcox2910/pyllm)** |
+| PyStack | Full-stack integration | [robcox2910/pystack](https://github.com/robcox2910/pystack) |
+
+### Inside PyStack: Pebble asks PyLLM to write code
+
+Once PyLLM is installed as a PyStack plugin, any Pebble program can call it:
+
+```pebble
+import "llm"
+let code = llm_generate("a function that adds two numbers")
+print(code)
+```
