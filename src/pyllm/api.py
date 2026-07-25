@@ -10,8 +10,7 @@ is also the door PyStack knocks on to let Pebble programs use PyLLM.
 import numpy as np
 
 from pyllm.checkpoint import load
-from pyllm.data import PEBBLE_CHECKPOINT
-from pyllm.data import POKEMON_CHECKPOINT
+from pyllm.data import PEBBLE_CHECKPOINT, POKEMON_CHECKPOINT
 from pyllm.generate import generate
 
 _CACHE = {}
@@ -28,14 +27,24 @@ def _load_cached(path):
 def generate_pokemon(prompt="", max_new_tokens=60, temperature=0.8, seed=None):
     """Dream up new Pokémon-ish names using the bundled Pokémon brain."""
     model, tokenizer = _load_cached(POKEMON_CHECKPOINT)
-    return generate(model, tokenizer, prompt=prompt,
-                    max_new_tokens=max_new_tokens, temperature=temperature,
-                    rng=np.random.default_rng(seed))
+    return generate(
+        model,
+        tokenizer,
+        prompt=prompt,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        rng=np.random.default_rng(seed),
+    )
 
 
 def generate_pebble(prompt="let ", max_new_tokens=120, temperature=0.7, seed=None):
     """Write Pebble-flavoured code using the bundled Pebble brain."""
     model, tokenizer = _load_cached(PEBBLE_CHECKPOINT)
-    return generate(model, tokenizer, prompt=prompt,
-                    max_new_tokens=max_new_tokens, temperature=temperature,
-                    rng=np.random.default_rng(seed))
+    return generate(
+        model,
+        tokenizer,
+        prompt=prompt,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        rng=np.random.default_rng(seed),
+    )

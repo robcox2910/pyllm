@@ -1,5 +1,4 @@
-from pyllm.api import generate_pebble
-from pyllm.api import generate_pokemon
+from pyllm.api import generate_pebble, generate_pokemon
 
 
 def test_generate_pokemon_returns_known_charset():
