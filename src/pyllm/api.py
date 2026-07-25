@@ -24,7 +24,12 @@ def _load_cached(path):
     return _CACHE[key]
 
 
-def generate_pokemon(prompt="", max_new_tokens=60, temperature=0.8, seed=None):
+def generate_pokemon(
+    prompt: str = "",
+    max_new_tokens: int = 60,
+    temperature: float = 0.8,
+    seed: int | None = None,
+) -> str:
     """Dream up new Pokémon-ish names using the bundled Pokémon brain."""
     model, tokenizer = _load_cached(POKEMON_CHECKPOINT)
     return generate(
@@ -37,7 +42,12 @@ def generate_pokemon(prompt="", max_new_tokens=60, temperature=0.8, seed=None):
     )
 
 
-def generate_pebble(prompt="let ", max_new_tokens=120, temperature=0.7, seed=None):
+def generate_pebble(
+    prompt: str = "let ",
+    max_new_tokens: int = 120,
+    temperature: float = 0.7,
+    seed: int | None = None,
+) -> str:
     """Write Pebble-flavoured code using the bundled Pebble brain."""
     model, tokenizer = _load_cached(PEBBLE_CHECKPOINT)
     return generate(
