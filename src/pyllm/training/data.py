@@ -17,6 +17,12 @@ def get_batch(data, block_size, batch_size, mode="sequence", rng=None):
         rng = np.random.default_rng()
     data = np.asarray(data)
     max_start = len(data) - block_size - 1
+    if max_start < 0:
+        raise ValueError(
+            f"corpus is too short: need at least block_size + 1 = {block_size + 1} "
+            f"tokens to cut a window plus its next-token answer, but only got "
+            f"{len(data)}. Use a longer corpus or a smaller block_size."
+        )
     starts = rng.integers(0, max_start + 1, size=batch_size)
     x = np.stack([data[s : s + block_size] for s in starts])
     if mode == "sequence":

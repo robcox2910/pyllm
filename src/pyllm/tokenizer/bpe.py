@@ -25,6 +25,7 @@ class BPETokenizer:
         self.itos = {index: token for token, index in self.stoi.items()}
 
     def train(self, text, num_merges):
+        """Learn the chunks: repeatedly glue the most common neighbour pair."""
         base_chars = sorted(set(text))
         symbols = list(text)  # each element is a token string, starting as chars
         self.merges = []
@@ -41,15 +42,18 @@ class BPETokenizer:
 
     @property
     def vocab_size(self):
+        """How many tokens we know: the single characters plus every learned chunk."""
         return len(self.stoi)
 
     def encode(self, text):
+        """Turn text into token numbers, gluing in the learned chunks as we go."""
         symbols = list(text)
         for left, right in self.merges:
             symbols = _merge_pair(symbols, left, right)
         return [self.stoi[symbol] for symbol in symbols]
 
     def decode(self, ids):
+        """Read the text back out by stitching each token's characters together."""
         return "".join(self.itos[index] for index in ids)
 
 

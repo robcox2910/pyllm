@@ -78,7 +78,10 @@ def run_tokenize(args, out=print):
     tokenizer = CharTokenizer(text)
     for char in args.text:
         shown = "\\n" if char == "\n" else char
-        out(f"{shown!r} -> {tokenizer.encode(char)[0]}")
+        try:
+            out(f"{shown!r} -> {tokenizer.encode(char)[0]}")
+        except KeyError:
+            out(f"{shown!r} -> (I have not seen that character yet)")
     return 0
 
 

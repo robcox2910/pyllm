@@ -34,6 +34,16 @@ Our bundled Pokémon model is a real GPT with a couple of blocks. Reading
 hunch, and the final layer scores `k` highest. Roll the dice (see `sampling.md`)
 and out comes another letter.
 
+## A knob for later: dropout
+
+Real transformers add one more trick while *training*: **dropout**. Think of a
+sports team practising with a few random players sitting out each drill, so the
+whole team gets good and nobody becomes a single point of failure. During
+training we randomly ignore a fraction of the signals inside each block; during
+real use (generation) everyone plays and dropout does nothing. Our
+`TransformerBlock` and `GPT` accept a `dropout` setting (default `0.0`, i.e.
+off), so you can switch it on to help a bigger model avoid over-memorising.
+
 ## Why does this matter?
 
 This exact structure — embeddings, stacked attention+feed-forward blocks — is

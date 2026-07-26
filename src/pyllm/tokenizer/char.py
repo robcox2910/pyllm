@@ -15,10 +15,13 @@ class CharTokenizer:
 
     @property
     def vocab_size(self):
+        """How many different lockers (characters) we know about."""
         return len(self.stoi)
 
     def encode(self, text):
+        """Turn text into a list of locker numbers, one per character."""
         return [self.stoi[char] for char in text]
 
     def decode(self, ids):
+        """Read the letters back out from a list of locker numbers."""
         return "".join(self.itos[index] for index in ids)

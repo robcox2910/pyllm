@@ -17,6 +17,26 @@ def test_top_k_1_is_effectively_greedy():
     assert picks == {1}  # only the single top token is ever allowed
 
 
+def test_top_k_zero_keeps_all_tokens():
+    # top_k=0 must mean "no shortlist", not "keep zero tokens".
+    logits = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    rng = np.random.default_rng(0)
+    picks = {sample_next(logits, temperature=1.0, top_k=0, rng=rng) for _ in range(200)}
+    # every token should be reachable, so we see more than just the single best
+    assert len(picks) > 1
+    assert all(0 <= p < 5 for p in picks)
+
+
+def test_negative_top_k_keeps_all_tokens():
+    logits = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    rng = np.random.default_rng(0)
+    picks = {
+        sample_next(logits, temperature=1.0, top_k=-3, rng=rng) for _ in range(200)
+    }
+    assert len(picks) > 1
+    assert all(0 <= p < 5 for p in picks)
+
+
 def test_low_temperature_concentrates_on_top_token():
     logits = np.array([0.0, 2.0, 0.0])
     rng = np.random.default_rng(0)

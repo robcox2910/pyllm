@@ -10,7 +10,8 @@ def sample_next(logits_row, temperature=1.0, top_k=None, rng=None):
       (safe but repetitive); 1 rolls fairly by the model's confidence; higher is
       wilder and more surprising.
     - `top_k` says "only consider the k most likely characters" so the roll never
-      lands on something absurd.
+      lands on something absurd. `None` or any value <= 0 means "no shortlist --
+      every character stays in the running".
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -18,7 +19,7 @@ def sample_next(logits_row, temperature=1.0, top_k=None, rng=None):
     if temperature == 0.0:
         return int(np.argmax(logits))
     logits = logits / temperature
-    if top_k is not None:
+    if top_k is not None and top_k > 0:
         keep = np.argsort(logits)[-top_k:]
         masked = np.full_like(logits, -np.inf)
         masked[keep] = logits[keep]
