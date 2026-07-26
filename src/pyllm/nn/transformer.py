@@ -1,4 +1,5 @@
 from pyllm.nn.attention import MultiHeadAttention
+from pyllm.nn.dropout import Dropout
 from pyllm.nn.functional import gelu
 from pyllm.nn.linear import Linear
 from pyllm.nn.module import Module
@@ -30,16 +31,20 @@ class TransformerBlock(Module):
     1. tokens talk to each other (multi-head attention),
     2. each token thinks privately (feed-forward).
     LayerNorm tidies the numbers before each step. Stack many of these bricks and
-    you get a real language model.
+    you get a real language model. Set `dropout` above 0 to randomly ignore some
+    signals during training (a way to stop the model over-memorising); it does
+    nothing at eval time, and the default of 0 leaves the block unchanged.
     """
 
-    def __init__(self, embed_dim, num_heads, block_size, rng=None):
+    def __init__(self, embed_dim, num_heads, block_size, dropout=0.0, rng=None):
         self.ln1 = LayerNorm(embed_dim)
         self.attn = MultiHeadAttention(embed_dim, num_heads, block_size, rng=rng)
+        self.drop1 = Dropout(dropout, rng=rng)
         self.ln2 = LayerNorm(embed_dim)
         self.ffn = FeedForward(embed_dim, rng=rng)
+        self.drop2 = Dropout(dropout, rng=rng)
 
     def forward(self, x):
-        x = x + self.attn(self.ln1(x))
-        x = x + self.ffn(self.ln2(x))
+        x = x + self.drop1(self.attn(self.ln1(x)))
+        x = x + self.drop2(self.ffn(self.ln2(x)))
         return x

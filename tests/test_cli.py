@@ -10,6 +10,15 @@ def test_tokenize_prints_ids(capsys):
     assert any(ch.isdigit() for ch in out)
 
 
+def test_tokenize_handles_unseen_character(capsys):
+    # A capital 'Z' is not in the lowercase Pokémon corpus, so encode would
+    # raise KeyError; the CLI should explain it kindly instead of crashing.
+    code = main(["tokenize", "--text", "Z"])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "not seen that character" in out
+
+
 def test_default_command_generates_from_bundled_checkpoint(capsys):
     code = main(["--max-new-tokens", "20", "--seed", "0"])
     out = capsys.readouterr().out

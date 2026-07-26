@@ -12,6 +12,9 @@ class GPT(Module):
     clues from the positions before it (attention) and think them over
     (feed-forward). A final tidy-up (LayerNorm) and a last Linear turn each
     position into scores for the next character. Stack more blocks -> smarter.
+    Pass `dropout` above 0 to randomly ignore some signals while training (which
+    helps the model generalise instead of memorising); it turns itself off during
+    generation, so the default of 0 keeps behaviour exactly as before.
     """
 
     def __init__(
@@ -21,6 +24,7 @@ class GPT(Module):
         embed_dim=32,
         num_heads=4,
         num_layers=2,
+        dropout=0.0,
         rng=None,
     ):
         self.vocab_size = vocab_size
@@ -28,11 +32,12 @@ class GPT(Module):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.num_layers = num_layers
+        self.dropout = dropout
         self.mode = "sequence"
         self.token_embedding = Embedding(vocab_size, embed_dim, rng=rng)
         self.position_embedding = Embedding(block_size, embed_dim, rng=rng)
         self.blocks = [
-            TransformerBlock(embed_dim, num_heads, block_size, rng=rng)
+            TransformerBlock(embed_dim, num_heads, block_size, dropout=dropout, rng=rng)
             for _ in range(num_layers)
         ]
         self.ln_f = LayerNorm(embed_dim)

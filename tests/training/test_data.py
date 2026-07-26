@@ -39,3 +39,12 @@ def test_batch_ids_are_integers():
     x, y = get_batch(data, 4, 2, rng=np.random.default_rng(0))
     assert np.issubdtype(x.dtype, np.integer)
     assert np.issubdtype(y.dtype, np.integer)
+
+
+def test_short_corpus_raises_clear_error():
+    import pytest
+
+    # Only 4 tokens but block_size=8 needs at least 9 (window + next-token answer).
+    data = np.arange(4)
+    with pytest.raises(ValueError, match="corpus is too short"):
+        get_batch(data, block_size=8, batch_size=2, rng=np.random.default_rng(0))

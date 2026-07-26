@@ -1,5 +1,5 @@
 """Neural-net building blocks — think of this as a box of Lego bricks (layers) you snap
-together to build a brain, all standing on the autograd Tensor from Plan 1.
+together to build a brain, all standing on the autograd Tensor (see `pyllm.autograd`).
 
 Each class here (Linear, Attention, etc.) is a reusable block that learns patterns.
 The `functional` module gives you the mathematical glue: softmax, cross_entropy, gelu.

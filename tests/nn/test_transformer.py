@@ -38,3 +38,31 @@ def test_transformer_block_gradients_flow_to_input():
     x = Tensor(np.ones((1, 4, 8)))
     block(x).sum().backward()
     assert np.any(x.grad != 0.0)
+
+
+def test_dropout_defaults_to_off():
+    # With dropout=0.0 the block is a deterministic computation: calling it twice
+    # on the same input gives the same result, even in train mode.
+    block = TransformerBlock(
+        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
+    )
+    block.train()
+    x = Tensor(np.random.default_rng(1).normal(size=(1, 4, 8)))
+    assert np.array_equal(block(x).data, block(x).data)
+
+
+def test_dropout_activates_in_train_mode_but_not_eval():
+    block = TransformerBlock(
+        embed_dim=8,
+        num_heads=2,
+        block_size=16,
+        dropout=0.5,
+        rng=np.random.default_rng(0),
+    )
+    x = Tensor(np.random.default_rng(1).normal(size=(1, 4, 8)))
+    # In train mode dropout randomly zeroes signals, so two passes differ.
+    block.train()
+    assert not np.array_equal(block(x).data, block(x).data)
+    # In eval mode dropout is off, so it is deterministic again.
+    block.eval()
+    assert np.array_equal(block(x).data, block(x).data)
