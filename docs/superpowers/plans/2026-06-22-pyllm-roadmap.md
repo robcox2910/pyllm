@@ -1,16 +1,20 @@
 # PyLLM Implementation Roadmap
 
+> **Status: ✅ COMPLETE.** All five plans are implemented, tested, and merged to
+> `main`. The Pebble flagship (`import "llm"`) works end-to-end inside PyStack,
+> and PyLLM ships as project #11 ("the brain") of the series.
+
 > The PyLLM spec (`docs/superpowers/specs/2026-06-22-pyllm-design.md`) is built
 > as **five sequential plans**. Each plan produces working, testable software on
 > its own and builds on the one before it. Implement them in order.
 
-| # | Plan | Deliverable (what works at the end) |
-|---|------|-------------------------------------|
-| 1 | **Autograd foundation** — `2026-06-22-pyllm-01-autograd.md` | A `Tensor` class wrapping numpy with reverse-mode autodiff. `loss.backward()` produces correct gradients, verified against finite-difference gradient checking. Project scaffolding (pyproject, package, tooling) done. |
-| 2 | **nn building blocks + tokenizers** | `Module` base, `Linear`, `Embedding`, `LayerNorm`, `Dropout`, `softmax`, `cross_entropy`, `gelu`, a self-attention head, multi-head attention, `TransformerBlock` — each unit-tested. Char tokenizer + from-scratch BPE tokenizer. |
-| 3 | **Model ladder + training + generation (Pokémon end-to-end)** | `bigram`, `mlp`, `gpt` models; from-scratch SGD + Adam; batching + training loop; sampling (greedy/temperature/top-k); checkpoint save/load; `pyllm` / `pyllm train` / `pyllm tokenize` CLI. Bundled Pokémon corpus + a tiny trained checkpoint that generates on launch. |
-| 4 | **Pebble flagship** | `pebble/` program generator (random valid ASTs → pebble-lang formatter), corpus harvester, parser-based validity scorer; bundled Pebble corpus + checkpoint; `pyllm pebble` and `pyllm gen-corpus` CLI commands. |
-| 5 | **PyStack integration + docs polish** | Pebble `import "llm"` module (`llm_generate`, checkpoint/sampling helpers); PyLLM added as project #11 ("the brain") to PyStack; full `docs/concepts/` kid-friendly write-ups; README with example session + series table. |
+| # | Plan | Status | Deliverable (what works at the end) |
+|---|------|--------|-------------------------------------|
+| 1 | **Autograd foundation** — `2026-06-22-pyllm-01-autograd.md` | ✅ Done | A `Tensor` class wrapping numpy with reverse-mode autodiff. `loss.backward()` produces correct gradients, verified against finite-difference gradient checking. Project scaffolding (pyproject, package, tooling) done. |
+| 2 | **nn building blocks + tokenizers** — `2026-06-22-pyllm-02-nn-tokenizers.md` | ✅ Done | `Module` base, `Linear`, `Embedding`, `LayerNorm`, `Dropout`, `softmax`, `cross_entropy`, `gelu`, a self-attention head, multi-head attention, `TransformerBlock` — each unit-tested. Char tokenizer + from-scratch BPE tokenizer. |
+| 3 | **Model ladder + training + generation (Pokémon end-to-end)** — `2026-07-21-pyllm-03-models-training-generation.md` | ✅ Done | `bigram`, `mlp`, `gpt` models; from-scratch SGD + Adam; batching + training loop; sampling (greedy/temperature/top-k); checkpoint save/load; `pyllm` / `pyllm train` / `pyllm tokenize` CLI. Bundled Pokémon corpus + a tiny trained checkpoint that generates on launch. |
+| 4 | **Pebble flagship** — `2026-07-21-pyllm-04-pebble-flagship.md` | ✅ Done | `pebble/` program generator (random valid ASTs → pebble-lang formatter), corpus harvester, parser-based validity scorer; bundled Pebble corpus + checkpoint; `pyllm pebble` and `pyllm gen-corpus` CLI commands. |
+| 5 | **PyStack integration + docs polish** — `2026-07-25-pyllm-05-pystack-integration-docs.md` | ✅ Done | Pebble `import "llm"` module (`llm_generate`, checkpoint/sampling helpers); PyLLM added as project #11 ("the brain") to PyStack; full `docs/concepts/` kid-friendly write-ups; README with example session + series table. |
 
 ## RULE #1 — Child-friendly documentation about EVERYTHING
 
@@ -60,5 +64,7 @@ each plan:
 
 ## Grammar-constrained decoding
 
-Deferred stretch goal (spec §6). Not in any of the five plans; add a sixth plan
-only after Plan 4 ships and proves valuable.
+Deferred stretch goal (spec §6). Not part of the five completed plans. Plan 4 has
+shipped and proven valuable, so this is now eligible to be picked up as an
+optional sixth plan if desired — mask the next-token distribution to only tokens
+the Pebble grammar permits, so generated code is *always* syntactically valid.
