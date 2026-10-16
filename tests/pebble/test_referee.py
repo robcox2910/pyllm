@@ -97,3 +97,22 @@ def test_everything_the_referee_accepts_really_parses():
     for text in FINISHED:
         for program in text.split("\n\n"):
             assert is_valid(program), program
+
+
+@pytest.mark.parametrize("word", ["match", "class", "from", "case", "await"])
+def test_pebble_reserved_words_cannot_be_names(word):
+    assert not complete(f"let {word} = 1")
+    assert not complete(f"let x = {word}")
+
+
+def test_null_is_a_value():
+    assert complete("let x = null")
+
+
+def test_referee_knows_every_pebble_reserved_word():
+    pytest.importorskip("pebble")
+    from pebble.tokens import KEYWORDS
+
+    from pyllm.pebble.referee import _KEYWORDS
+
+    assert set(KEYWORDS) <= _KEYWORDS

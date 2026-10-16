@@ -92,7 +92,7 @@ parser accepts it too. Tests verify this against pebble-lang.
   `referee.viable(text_so_far + char)`. The loop remembers the longest prefix that
   was `complete`; when `max_new_tokens` runs out, output is trimmed back to it, so
   a half-written program is never returned. A non-viable prompt raises a friendly
-  `ValueError`. If no complete point exists, return the prompt unchanged.
+  `ValueError`. If no complete point exists, return `""` (never half a program, not even an unfinished prompt).
 
 ## 4. Surfaces
 

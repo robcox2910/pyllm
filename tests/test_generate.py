@@ -202,11 +202,11 @@ def test_rule_breaking_prompt_is_rejected():
         generate(model, tokenizer, prompt="b", referee=OnlyAs())
 
 
-def test_no_finished_point_returns_the_prompt():
+def test_unfinished_prompt_with_no_finished_point_returns_nothing():
     class NeverDone(OnlyAs):
         def complete(self, text):
             return False
 
     model, tokenizer = _tiny_gpt()
     text = generate(model, tokenizer, prompt="a", max_new_tokens=4, referee=NeverDone())
-    assert text == "a"
+    assert text == ""  # never hand back half a program, not even the prompt

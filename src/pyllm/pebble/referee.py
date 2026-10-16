@@ -19,25 +19,48 @@ earlier program must be complete; only the last one may still be in progress.
 from functools import lru_cache
 
 _INDENT = "    "
+# Every word Pebble reserves (so it can never be a name), plus `print` and
+# `range`, which our tidy slice of Pebble only uses in their special spots.
 _KEYWORDS = frozenset(
     [
+        "const",
         "let",
-        "fn",
         "if",
         "else",
         "while",
         "for",
         "in",
+        "fn",
         "return",
-        "print",
+        "yield",
+        "break",
+        "continue",
+        "try",
+        "catch",
+        "finally",
+        "throw",
+        "match",
+        "case",
+        "struct",
+        "class",
+        "enum",
+        "extends",
+        "super",
+        "import",
+        "from",
+        "true",
+        "false",
+        "null",
+        "async",
+        "await",
         "and",
         "or",
         "not",
-        "true",
-        "false",
+        "print",
         "range",
     ]
 )
+_VALUES = frozenset(["true", "false", "null"])
 _NAME_START = "abcdefghijklmnopqrstuvwxyz_"
 _NAME_CHARS = _NAME_START + "0123456789"
 _DIGITS = "0123456789"
@@ -274,7 +297,7 @@ class _Parser:
             self._expect(")")
         elif char in _NAME_START:
             word, at_end = self._word()
-            if word in ("true", "false"):
+            if word in _VALUES:
                 return
             if word in _KEYWORDS:
                 if at_end:

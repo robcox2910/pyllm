@@ -119,4 +119,5 @@ def generate(
             finished_at = len(text)
     if referee is None:
         return text
-    return text[:finished_at] if finished_at is not None else prompt
+    # No finished program at all? Hand back nothing rather than half a program.
+    return text[:finished_at] if finished_at is not None else ""
