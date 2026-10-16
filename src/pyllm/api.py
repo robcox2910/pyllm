@@ -12,6 +12,7 @@ import numpy as np
 from pyllm.checkpoint import load
 from pyllm.data import PEBBLE_CHECKPOINT, POKEMON_CHECKPOINT
 from pyllm.generate import generate
+from pyllm.pebble import referee as pebble_referee
 
 _CACHE = {}
 
@@ -47,8 +48,13 @@ def generate_pebble(
     max_new_tokens: int = 120,
     temperature: float = 0.7,
     seed: int | None = None,
+    constrained: bool = False,
 ) -> str:
-    """Write Pebble-flavoured code using the bundled Pebble brain."""
+    """Write Pebble-flavoured code using the bundled Pebble brain.
+
+    With `constrained=True` a grammar referee vetoes every illegal character, so
+    what comes back is always real, parseable Pebble.
+    """
     model, tokenizer = _load_cached(PEBBLE_CHECKPOINT)
     return generate(
         model,
@@ -57,4 +63,5 @@ def generate_pebble(
         max_new_tokens=max_new_tokens,
         temperature=temperature,
         rng=np.random.default_rng(seed),
+        referee=pebble_referee if constrained else None,
     )

@@ -8,6 +8,7 @@ from pyllm.data import PEBBLE_CHECKPOINT, POKEMON_CHECKPOINT, load_corpus
 from pyllm.generate import generate
 from pyllm.models import GPT, MLP, Bigram
 from pyllm.pebble import PEBBLE_AVAILABLE, build_corpus, parse_rate
+from pyllm.pebble import referee as pebble_referee
 from pyllm.tokenizer import CharTokenizer
 from pyllm.training import train
 
@@ -90,15 +91,20 @@ def run_pebble(args, out=print):
     rng = np.random.default_rng(args.seed)
     checkpoint = args.checkpoint if args.checkpoint else PEBBLE_CHECKPOINT
     model, tokenizer = load(checkpoint)
-    text = generate(
-        model,
-        tokenizer,
-        prompt=args.prompt,
-        max_new_tokens=args.max_new_tokens,
-        temperature=args.temperature,
-        top_k=args.top_k,
-        rng=rng,
-    )
+    try:
+        text = generate(
+            model,
+            tokenizer,
+            prompt=args.prompt,
+            max_new_tokens=args.max_new_tokens,
+            temperature=args.temperature,
+            top_k=args.top_k,
+            rng=rng,
+            referee=pebble_referee if args.constrained else None,
+        )
+    except ValueError as exc:
+        out(f"(the referee blew the whistle: {exc})")
+        return 2
     out(text)
     if args.score:
         if not PEBBLE_AVAILABLE:
@@ -164,6 +170,11 @@ def main(argv=None):
     p_pebble.add_argument("--seed", type=int, default=None)
     p_pebble.add_argument(
         "--score", action="store_true", help="report what %% of the output parses"
+    )
+    p_pebble.add_argument(
+        "--constrained",
+        action="store_true",
+        help="let the grammar referee veto illegal characters (always valid code)",
     )
     p_pebble.set_defaults(func=run_pebble)
 
