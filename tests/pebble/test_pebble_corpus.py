@@ -28,6 +28,8 @@ def test_public_api_exports():
         "is_valid",
         "parse_rate",
         "harvest_dir",
+        "viable",
+        "complete",
         "PEBBLE_AVAILABLE",
     ]:
         assert hasattr(pebble, name), f"pyllm.pebble is missing {name}"

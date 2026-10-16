@@ -8,6 +8,7 @@ PEBBLE_AVAILABLE = importlib.util.find_spec("pebble") is not None
 from pyllm.pebble.corpus import build_corpus  # noqa: E402
 from pyllm.pebble.generator import random_program  # noqa: E402
 from pyllm.pebble.harvest import harvest_dir  # noqa: E402
+from pyllm.pebble.referee import complete, viable  # noqa: E402
 from pyllm.pebble.render import render  # noqa: E402
 from pyllm.pebble.score import is_valid, parse_rate  # noqa: E402
 
@@ -19,4 +20,6 @@ __all__ = [
     "is_valid",
     "parse_rate",
     "harvest_dir",
+    "viable",
+    "complete",
 ]
