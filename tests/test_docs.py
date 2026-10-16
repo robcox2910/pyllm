@@ -69,3 +69,11 @@ def test_concepts_index_links_every_doc():
         "grow-your-own-data.md",
     ]:
         assert doc in text, f"concepts index should link {doc}"
+
+
+def test_plan6_referee_concept_doc_exists_and_covers_key_ideas():
+    doc = Path("docs/concepts/the-referee.md")
+    assert doc.exists(), "RULE #1: missing concept doc docs/concepts/the-referee.md"
+    text = doc.read_text().lower()
+    for idea in ["referee", "whistle", "grammar", "analogy", "valid", "roll again"]:
+        assert idea in text, f"the-referee.md should explain '{idea}'"
