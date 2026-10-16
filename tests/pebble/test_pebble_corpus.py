@@ -35,14 +35,26 @@ def test_public_api_exports():
         assert hasattr(pebble, name), f"pyllm.pebble is missing {name}"
 
 
-def test_canonical_corpus_drops_snippets_the_formatter_breaks(tmp_path):
+def test_canonical_corpus_drops_programs_the_formatter_breaks(tmp_path, monkeypatch):
+    """If tidying ever breaks a program, build_corpus throws that program away.
+
+    We don't rely on a real formatter bug (those get fixed upstream); instead
+    we swap in a "formatter" that deliberately mangles one snippet.
+    """
     import numpy as np
     import pytest
 
     pytest.importorskip("pebble")
+    import pyllm.pebble.corpus as corpus
     from pyllm.pebble import build_corpus, is_valid
 
-    (tmp_path / "doc.md").write_text("```pebble\nstruct Point { x, y }\n```\n")
+    real_canonicalize = corpus.canonicalize
+
+    def mangle_the_marked_one(source):
+        return "let = oops\n" if "marked" in source else real_canonicalize(source)
+
+    (tmp_path / "doc.md").write_text("```pebble\nlet marked = 1\n```\n")
+    monkeypatch.setattr(corpus, "canonicalize", mangle_the_marked_one)
     text = build_corpus(
         np.random.default_rng(0),
         num_generated=3,
@@ -50,7 +62,7 @@ def test_canonical_corpus_drops_snippets_the_formatter_breaks(tmp_path):
         canonical=True,
     )
     programs = [p for p in text.split("\n\n") if p.strip()]
-    assert "struct" not in text
+    assert "oops" not in text
     assert len(programs) == 3
     assert all(is_valid(p) for p in programs)
 
