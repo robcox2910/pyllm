@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from pyllm.generate import generate, sample_next
 from pyllm.models import GPT, MLP
@@ -122,3 +123,90 @@ def test_generate_works_for_single_mode_model_with_short_prompt():
     )
     assert len(out) == 4
     assert set(out).issubset(set(text))
+
+
+def test_forbidden_tokens_are_never_chosen():
+    logits = np.array([0.0, 9.0, 0.0, 0.0])
+    rng = np.random.default_rng(0)
+    picks = {
+        sample_next(logits, rng=rng, allowed=lambda token: token != 1)
+        for _ in range(200)
+    }
+    assert 1 not in picks
+
+
+def test_greedy_picks_the_best_allowed_token():
+    logits = np.array([0.1, 5.0, -2.0, 3.0])
+    pick = sample_next(logits, temperature=0.0, allowed=lambda token: token != 1)
+    assert pick == 3
+
+
+def test_top_k_falls_back_when_the_shortlist_is_all_forbidden():
+    logits = np.array([0.1, 5.0, -2.0, 3.0])
+    rng = np.random.default_rng(0)
+    pick = sample_next(logits, top_k=1, rng=rng, allowed=lambda token: token != 1)
+    assert pick != 1
+
+
+def test_nothing_allowed_is_an_error():
+    with pytest.raises(RuntimeError):
+        sample_next(np.array([1.0, 2.0]), allowed=lambda token: False)
+
+
+class OnlyAs:
+    """A toy referee: text may only contain 'a', and is finished at even lengths."""
+
+    def viable(self, text):
+        return set(text) <= {"a"}
+
+    def complete(self, text):
+        return self.viable(text) and len(text) % 2 == 0
+
+
+def _tiny_gpt(text="abc"):
+    tokenizer = CharTokenizer(text)
+    model = GPT(
+        tokenizer.vocab_size,
+        block_size=8,
+        embed_dim=16,
+        num_heads=2,
+        num_layers=1,
+        rng=np.random.default_rng(0),
+    )
+    return model, tokenizer
+
+
+def test_referee_keeps_generation_legal_and_trims_to_a_finished_point():
+    model, tokenizer = _tiny_gpt()
+    text = generate(
+        model,
+        tokenizer,
+        max_new_tokens=7,
+        rng=np.random.default_rng(0),
+        referee=OnlyAs(),
+    )
+    assert text == "aaaaaa"  # 7 legal letters, trimmed back to the last even length
+
+
+def test_greedy_generation_with_a_referee_stays_legal():
+    model, tokenizer = _tiny_gpt()
+    text = generate(
+        model, tokenizer, max_new_tokens=5, temperature=0.0, referee=OnlyAs()
+    )
+    assert text == "aaaa"
+
+
+def test_rule_breaking_prompt_is_rejected():
+    model, tokenizer = _tiny_gpt()
+    with pytest.raises(ValueError, match="breaks the rules"):
+        generate(model, tokenizer, prompt="b", referee=OnlyAs())
+
+
+def test_no_finished_point_returns_the_prompt():
+    class NeverDone(OnlyAs):
+        def complete(self, text):
+            return False
+
+    model, tokenizer = _tiny_gpt()
+    text = generate(model, tokenizer, prompt="a", max_new_tokens=4, referee=NeverDone())
+    assert text == "a"
