@@ -16,3 +16,5 @@ first. Read them roughly in this order; each builds on the last.
    top-k).
 8. [When there's no data, grow your own](grow-your-own-data.md) — the Pebble
    corpus: harvest, generate, and grade.
+9. [The referee](the-referee.md) — grammar-constrained decoding: vetoing illegal
+   characters so generated Pebble always parses.

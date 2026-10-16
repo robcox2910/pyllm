@@ -58,16 +58,41 @@ parser and reporting what percentage parses:
 ```console
 $ uv run pyllm pebble --seed 7 --temperature 0.5 --score
 let total = total * z * (35 % 87)
-print(compute())
-let a = (y - result) % (37 + result)
+    print(compute())
+        let a = (y - result) % (37 + result)
+    }
 ...
-parse rate: 33.3% of 3 programs
+parse rate: 0.0% of 1 programs
 ```
 
 The bundled checkpoint is *tiny* (a few-minute char-level GPT), so it writes
 Pebble-*flavoured* code and only some of it parses — and that's the whole point:
 the parser is an honest, objective judge, so you can watch the score go up as you
 train longer or bigger. Almost no LLM project can grade its own output like this.
+
+### Call in the referee: always-valid Pebble
+
+Add `--constrained` and a from-scratch grammar **referee** vetoes every character
+that would break Pebble's rules, so the model rolls again until it picks a legal
+one. Same tiny brain — but now every program it returns parses:
+
+```console
+$ uv run pyllm pebble --seed 7 --constrained --score
+let value = step()
+print(14 - 82)
+for i in range(4) {
+    x = b
+    while 57 >= 48 and 83 != a {
+        print(compute())
+        let z = helper()
+    }
+}
+
+parse rate: 100.0% of 1 programs
+```
+
+From Python: `generate_pebble(constrained=True)`. See
+[`docs/concepts/the-referee.md`](docs/concepts/the-referee.md).
 
 Grow a fresh synthetic corpus with `uv run pyllm gen-corpus`. Live scoring needs
 the optional `pebble-lang` dependency (`uv sync --all-extras`); generation and

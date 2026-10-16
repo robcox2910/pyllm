@@ -146,8 +146,7 @@ so the shipped PyLLM does not import `pebble-lang` to run the demo. The optional
 **live validity-scoring** command imports `pebble-lang`'s parser only when it is
 available, and degrades gracefully when it is not.
 
-**Stretch goal (clearly out of the initial scope): grammar-constrained
-decoding** — at generation time, mask the next-token distribution to only tokens
+**Grammar-constrained decoding (delivered in Plan 6)** — at generation time, mask the next-token distribution to only tokens
 the Pebble grammar permits, so output is *always* syntactically valid. Powerful
 and very on-theme, but layered on after the core flagship works.
 
@@ -219,7 +218,6 @@ Projects" series table.
   instructions").
 - Alternative architectures (RNNs/LSTMs, state-space models).
 - A web UI (the REPL is the interface; PyStack/Pebble is the programmatic interface).
-- Grammar-constrained decoding (deferred stretch goal, see §6).
 - Semantic correctness of generated Pebble (we target *syntactic* validity; the
   model is not expected to write correct programs, only parseable ones).
 

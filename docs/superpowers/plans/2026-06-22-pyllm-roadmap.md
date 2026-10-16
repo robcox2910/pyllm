@@ -1,6 +1,6 @@
 # PyLLM Implementation Roadmap
 
-> **Status: ✅ COMPLETE.** All five plans are implemented, tested, and merged to
+> **Status: ✅ COMPLETE.** All six plans are implemented, tested, and merged to
 > `main`. The Pebble flagship (`import "llm"`) works end-to-end inside PyStack,
 > and PyLLM ships as project #11 ("the brain") of the series.
 
@@ -15,6 +15,7 @@
 | 3 | **Model ladder + training + generation (Pokémon end-to-end)** — `2026-07-21-pyllm-03-models-training-generation.md` | ✅ Done | `bigram`, `mlp`, `gpt` models; from-scratch SGD + Adam; batching + training loop; sampling (greedy/temperature/top-k); checkpoint save/load; `pyllm` / `pyllm train` / `pyllm tokenize` CLI. Bundled Pokémon corpus + a tiny trained checkpoint that generates on launch. |
 | 4 | **Pebble flagship** — `2026-07-21-pyllm-04-pebble-flagship.md` | ✅ Done | `pebble/` program generator (random valid ASTs → pebble-lang formatter), corpus harvester, parser-based validity scorer; bundled Pebble corpus + checkpoint; `pyllm pebble` and `pyllm gen-corpus` CLI commands. |
 | 5 | **PyStack integration + docs polish** — `2026-07-25-pyllm-05-pystack-integration-docs.md` | ✅ Done | Pebble `import "llm"` module (`llm_generate`, checkpoint/sampling helpers); PyLLM added as project #11 ("the brain") to PyStack; full `docs/concepts/` kid-friendly write-ups; README with example session + series table. |
+| 6 | **Grammar-constrained decoding** — `2026-10-16-pyllm-06-grammar-constrained-decoding.md` | ✅ Done | `pyllm/pebble/referee.py` (viable/complete prefix checker), referee-aware `sample_next`/`generate`, `pyllm pebble --constrained`, `generate_pebble(constrained=True)` — 100% parse rate. Corpus re-validated after formatting. |
 
 ## RULE #1 — Child-friendly documentation about EVERYTHING
 
@@ -61,10 +62,9 @@ each plan:
 - Plan 3: `docs/concepts/how-a-model-learns.md`, `sampling.md`, `transformer.md`.
 - Plan 4: `docs/concepts/grow-your-own-data.md` — harvest, generate, grade.
 - Plan 5: full `docs/concepts/` polish + README with example session.
+- Plan 6: `docs/concepts/the-referee.md` — the referee with a whistle.
 
 ## Grammar-constrained decoding
 
-Deferred stretch goal (spec §6). Not part of the five completed plans. Plan 4 has
-shipped and proven valuable, so this is now eligible to be picked up as an
-optional sixth plan if desired — mask the next-token distribution to only tokens
-the Pebble grammar permits, so generated code is *always* syntactically valid.
+Delivered as Plan 6. Follow-up (pebble-lang repo): expose a constrained option
+through Pebble's `import "llm"` module.

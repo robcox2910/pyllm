@@ -18150,36 +18150,6 @@ print(w.status())  # prints: Tank (HP: 185)
 print(m.cast_spell(30))  # prints: Gandalf casts a spell!
 print(m.is_alive())  # prints: true (inherited from Character)
 
-# Extending a class that doesn't exist
-class Dog extends Unknown {  # Error: Unknown parent class 'Unknown'
-# A class can't extend itself
-# Duplicate field with parent
-}  # (already inherited from Animal)
-# Using super outside a child class
-struct Point {
-    x,
-    y
-# Calling a method the parent doesn't have
-}  # inside a child class
-class Bad extends Point {  # Error: 'Point' is not a class
-}  # has no method 'fly'
-class Loop extends Loop {  # Error: A class cannot extend itself
-}
-class Dog extends Animal {
-    name  # Error: Duplicate field 'name'
-}
-class Standalone {
-    fn go(self) {
-        super.go()  # Error: 'super' can only be used
-    }
-}
-class Dog extends Animal {
-    fn speak(self) {
-        super.fly()  # Error: Parent class 'Animal'
-    }
-}
-# Extending something that isn't a class
-
 for x in [10, 20, 30] {
     print(x)
 }
@@ -18484,15 +18454,6 @@ fn quiet() {  # this IS available to importers
 import "math.pbl"  # same directory
 import "lib/utils.pbl"  # subdirectory called lib
 
-# geometry.pbl
-struct Point {
-    x,
-    y
-}
-fn distance(p) {
-    return (p.x ** 2 + p.y ** 2) ** 0.5
-}
-
 import "geometry.pbl"
 let p = Point(3, 4)
 print(distance(p))  # 5.0
@@ -18536,18 +18497,6 @@ fn mul(a, b) {
 
 from "helpers.pbl" import add, mul
 print(add(2, mul(3, 4)))  # 14
-
-# geometry.pbl
-struct Point {
-    x,
-    y
-}
-fn distance(p) {
-    return (p.x ** 2 + p.y ** 2) ** 0.5
-}
-fn translate(p, dx, dy) {
-    return Point(p.x + dx, p.y + dy)
-}
 
 import "geometry.pbl"
 let p = Point(3, 4)
@@ -18991,13 +18940,6 @@ print(type(true))  # prints: bool
 print(type([1, 2]))  # prints: list
 print(type({}))  # prints: dict
 
-struct Point {
-    x,
-    y
-}
-let p = Point(10, 20)
-print(type(p))  # prints: Point
-
 let x = 42
 if type(x) == "int" {
     print("it is a number")
@@ -19216,17 +19158,6 @@ for i in range(len(parts)) {
     print(parts[i])
 }
 
-struct Point {
-    x,
-    y
-}
-
-struct Point {
-    x,
-    y
-}
-let p = Point(10, 20)
-
 print(p.x)  # prints: 10
 print(p.y)  # prints: 20
 
@@ -19256,57 +19187,11 @@ print(points[0].x)  # prints: 1
 let locations = {"home": Point(0, 0), "school": Point(10, 5)}
 print(locations["school"].y)  # prints: 5
 
-struct Line {
-    start,
-    end
-}
-let line = Line(Point(0, 0), Point(10, 10))
-print(line.start.x)  # prints: 0
-print(line.end.y)  # prints: 10
-
 let a = Point(10, 20)
 let b = Point(10, 20)
 print(a == b)  # prints: true
 let c = Point(10, 30)
 print(a == c)  # prints: false
-
-struct Vec {
-    x,
-    y
-}
-let p = Point(10, 20)
-let v = Vec(10, 20)
-print(p == v)  # prints: false
-
-struct Color {
-    r,
-    g,
-    b
-}
-let red = Color(255, 0, 0)
-let blue = Color(0, 0, 255)
-print(red)  # prints: Color(r=255, g=0, b=0)
-print(blue)  # prints: Color(r=0, g=0, b=255)
-
-struct Student {
-    name,
-    age,
-    grade
-}
-let alice = Student("Alice", 12, "A")
-print(alice.name)  # prints: Alice
-print(alice.grade)  # prints: A
-alice.grade = "A+"
-print(alice)  # prints: Student(name=Alice, age=12, grade=A+)
-
-struct Node {
-    value,
-    next
-}
-let list = Node(1, Node(2, Node(3, 0)))
-print(list.value)  # prints: 1
-print(list.next.value)  # prints: 2
-print(list.next.next.value)  # prints: 3
 
 fn swap(a, b) {
     return [b, a]
@@ -19435,15 +19320,6 @@ fn greet(name: String, times) {
     }
 }
 
-struct Point {
-    x: Float,
-    y: Float
-}
-let origin: Point = Point(0.0, 0.0)
-fn distance(p: Point) -> Float {
-    return (p.x ** 2 + p.y ** 2) ** 0.5
-}
-
 fn calculate(a: Float, b: Float, op: String) -> Float {
     match op {
         case "+" {
@@ -19482,13 +19358,6 @@ fn broken() -> Int {
     return "oops"  # fails — "oops" is not an Int
 }
 
-struct Point {
-    x: Float,
-    y: Float
-}
-Point(1.0, 2.0)  # passes — both are Float
-Point(1, 2.0)  # fails — 1 is not a Float
-
 let x = 42  # inferred as Int
 let y = x + 1  # inferred as Int (Int + Int = Int)
 let z: Int = y  # passes — y is Int
@@ -19510,13 +19379,6 @@ print(type(true))  # prints: bool
 print(type(null))  # prints: null
 print(type([1, 2]))  # prints: list
 print(type({}))  # prints: dict
-
-struct Point {
-    x,
-    y
-}
-let p = Point(10, 20)
-print(type(p))  # prints: Point
 
 enum Color {
     Red,
@@ -19582,16 +19444,6 @@ print(float(f) + 1)  # prints: 4.140000000000001
 
 let x = 42
 print("answer: {x}")  # prints: answer: 42
-
-let x: Int = 5
-let y: Null = null
-fn add(a: Int, b: Int) -> Int {
-    return a + b
-}
-struct Point {
-    x: Float,
-    y: Float
-}
 
 let scores: List[Int] = [90, 85, 92]
 let ages: Dict[String, Int] = {"Alice": 12, "Bob": 13}
