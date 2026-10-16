@@ -33,3 +33,35 @@ def test_public_api_exports():
         "PEBBLE_AVAILABLE",
     ]:
         assert hasattr(pebble, name), f"pyllm.pebble is missing {name}"
+
+
+def test_canonical_corpus_drops_snippets_the_formatter_breaks(tmp_path):
+    import numpy as np
+    import pytest
+
+    pytest.importorskip("pebble")
+    from pyllm.pebble import build_corpus, is_valid
+
+    (tmp_path / "doc.md").write_text("```pebble\nstruct Point { x, y }\n```\n")
+    text = build_corpus(
+        np.random.default_rng(0),
+        num_generated=3,
+        harvest_paths=[tmp_path],
+        canonical=True,
+    )
+    programs = [p for p in text.split("\n\n") if p.strip()]
+    assert "struct" not in text
+    assert len(programs) == 3
+    assert all(is_valid(p) for p in programs)
+
+
+def test_every_bundled_corpus_program_parses():
+    import pytest
+
+    pytest.importorskip("pebble")
+    from pyllm.data import load_corpus
+    from pyllm.pebble import is_valid
+
+    programs = [p for p in load_corpus("pebble").split("\n\n") if p.strip()]
+    broken = [p for p in programs if not is_valid(p)]
+    assert not broken, broken[0]

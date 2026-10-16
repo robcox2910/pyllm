@@ -54,4 +54,11 @@ def build_corpus(rng, num_generated=400, harvest_paths=(), canonical=False):
             programs.extend(block for block in harvest_dir(path) if is_valid(block))
     if canonical:
         programs = [canonicalize(p) for p in programs]
-    return "\n\n".join(_one_program(p) for p in programs) + "\n"
+    programs = [_one_program(p) for p in programs]
+    if PEBBLE_AVAILABLE and (harvest_paths or canonical):
+        from pyllm.pebble.score import is_valid
+
+        # Tidying can break a snippet that parsed before (Pebble's formatter
+        # mangles one-line structs), so judge the *final* text once more.
+        programs = [p for p in programs if is_valid(p)]
+    return "\n\n".join(programs) + "\n"
