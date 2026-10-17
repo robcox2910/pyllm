@@ -14,12 +14,12 @@ from pyllm.pebble.score import is_valid, parse_rate  # noqa: E402
 
 __all__ = [
     "PEBBLE_AVAILABLE",
-    "random_program",
-    "render",
     "build_corpus",
+    "complete",
+    "harvest_dir",
     "is_valid",
     "parse_rate",
-    "harvest_dir",
+    "random_program",
+    "render",
     "viable",
-    "complete",
 ]

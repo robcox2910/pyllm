@@ -7,16 +7,21 @@ file the model can learn from.
 """
 
 import re
+from collections.abc import Sequence
+from os import PathLike
+
+import numpy as np
 
 from pyllm.pebble import PEBBLE_AVAILABLE
 from pyllm.pebble.generator import random_program
 from pyllm.pebble.harvest import harvest_dir
 from pyllm.pebble.render import render
+from pyllm.pebble.score import is_valid
 
 _BLANK_LINES = re.compile(r"\n\s*\n+")
 
 
-def _one_program(source):
+def _one_program(source: str) -> str:
     """Squeeze out blank lines so one blank line always marks a new program.
 
     Pebble ignores blank lines between statements, so removing them keeps the
@@ -27,18 +32,23 @@ def _one_program(source):
     return _BLANK_LINES.sub("\n", source.strip())
 
 
-def canonicalize(source):
+def canonicalize(source: str) -> str:
     """Tidy Pebble source into its one true formatting, via Pebble's formatter."""
     try:
-        from pebble import format_source
+        from pebble import format_source  # noqa: PLC0415 - optional dependency
     except ImportError as exc:  # pragma: no cover - environment-dependent
-        raise RuntimeError(
-            "Canonicalizing needs pebble-lang. Install it: `uv sync --all-extras`."
-        ) from exc
+        msg = "Canonicalizing needs pebble-lang. Install it: `uv sync --all-extras`."
+        raise RuntimeError(msg) from exc
     return format_source(source)
 
 
-def build_corpus(rng, num_generated=400, harvest_paths=(), canonical=False):
+def build_corpus(
+    rng: np.random.Generator,
+    num_generated: int = 400,
+    harvest_paths: Sequence[str | PathLike[str]] = (),
+    *,
+    canonical: bool = False,
+) -> str:
     """Build a Pebble training corpus as one big string (blank-line-separated).
 
     - `num_generated`: how many random valid programs to grow.
@@ -48,16 +58,12 @@ def build_corpus(rng, num_generated=400, harvest_paths=(), canonical=False):
     """
     programs = [render(random_program(rng)) for _ in range(num_generated)]
     if harvest_paths and PEBBLE_AVAILABLE:
-        from pyllm.pebble.score import is_valid
-
         for path in harvest_paths:
             programs.extend(block for block in harvest_dir(path) if is_valid(block))
     if canonical:
         programs = [canonicalize(p) for p in programs]
     programs = [_one_program(p) for p in programs]
     if PEBBLE_AVAILABLE and (harvest_paths or canonical):
-        from pyllm.pebble.score import is_valid
-
         # Tidying can break a snippet that parsed before (Pebble's formatter
         # mangles one-line structs), so judge the *final* text once more.
         programs = [p for p in programs if is_valid(p)]
