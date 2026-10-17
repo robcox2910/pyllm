@@ -1,13 +1,16 @@
 """Language models on the teaching ladder, assembled from nn building blocks."""
 
+import numpy as np
+
+from pyllm.models.base import LanguageModel, ModelConfig
 from pyllm.models.bigram import Bigram
 from pyllm.models.gpt import GPT
 from pyllm.models.mlp import MLP
 
-__all__ = ["Bigram", "MLP", "GPT", "build_model"]
+__all__ = ["GPT", "MLP", "Bigram", "LanguageModel", "ModelConfig", "build_model"]
 
 
-def build_model(config, rng=None):
+def build_model(config: ModelConfig, rng: np.random.Generator | None = None) -> LanguageModel:
     """Rebuild a model from its recipe card (`config()` output).
 
     A saved checkpoint stores only the *numbers* (weights) plus this little
@@ -35,4 +38,5 @@ def build_model(config, rng=None):
             num_layers=config["num_layers"],
             rng=rng,
         )
-    raise ValueError(f"unknown model kind: {kind!r}")
+    msg = f"unknown model kind: {kind!r}"
+    raise ValueError(msg)

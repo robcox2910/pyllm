@@ -1,9 +1,14 @@
+"""GPT: a stack of Transformer blocks that reads a whole window of text."""
+
 import numpy as np
+from numpy.typing import NDArray
 
-from pyllm.nn import Embedding, LayerNorm, Linear, Module, TransformerBlock, embedding
+from pyllm.autograd import Tensor
+from pyllm.models.base import LanguageModel, ModelConfig
+from pyllm.nn import Embedding, LayerNorm, Linear, TransformerBlock, embedding
 
 
-class GPT(Module):
+class GPT(LanguageModel):
     """The real thing: a stack of Transformer blocks that reads a whole window.
 
     Each character becomes a vector (token embedding), and because "the cat sat"
@@ -19,14 +24,15 @@ class GPT(Module):
 
     def __init__(
         self,
-        vocab_size,
-        block_size=8,
-        embed_dim=32,
-        num_heads=4,
-        num_layers=2,
-        dropout=0.0,
-        rng=None,
-    ):
+        vocab_size: int,
+        block_size: int = 8,
+        embed_dim: int = 32,
+        num_heads: int = 4,
+        num_layers: int = 2,
+        dropout: float = 0.0,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        """Create the embeddings, the tower of blocks and the final scoring layer."""
         self.vocab_size = vocab_size
         self.block_size = block_size
         self.embed_dim = embed_dim
@@ -43,8 +49,9 @@ class GPT(Module):
         self.ln_f = LayerNorm(embed_dim)
         self.head = Linear(embed_dim, vocab_size, rng=rng)
 
-    def forward(self, idx):
-        seq_len = idx.shape[1]
+    def forward(self, idx: NDArray[np.int64]) -> Tensor:
+        """Read a window of token ids and score the next token at every position."""
+        seq_len: int = idx.shape[1]
         tok = self.token_embedding(idx)  # (B, T, embed_dim)
         pos = embedding(self.position_embedding.weight, np.arange(seq_len))
         x = tok + pos  # (T, embed_dim) broadcasts over the batch
@@ -53,8 +60,8 @@ class GPT(Module):
         x = self.ln_f(x)
         return self.head(x)  # (B, T, vocab_size)
 
-    def config(self):
-        """The recipe card needed to rebuild an identical (untrained) model."""
+    def config(self) -> ModelConfig:
+        """Return the recipe card needed to rebuild an identical (untrained) model."""
         return {
             "kind": "gpt",
             "vocab_size": self.vocab_size,
