@@ -1,7 +1,18 @@
+"""Batching: cutting random windows of text for the model to learn from."""
+
 import numpy as np
+from numpy.typing import ArrayLike
+
+from pyllm._types import IntArray
 
 
-def get_batch(data, block_size, batch_size, mode="sequence", rng=None):
+def get_batch(
+    data: ArrayLike,
+    block_size: int,
+    batch_size: int,
+    mode: str = "sequence",
+    rng: np.random.Generator | None = None,
+) -> tuple[IntArray, IntArray]:
     """Grab a handful of random windows of text to learn from this step.
 
     Training on the whole corpus at once would be slow, so each step we grab a
@@ -18,11 +29,12 @@ def get_batch(data, block_size, batch_size, mode="sequence", rng=None):
     data = np.asarray(data)
     max_start = len(data) - block_size - 1
     if max_start < 0:
-        raise ValueError(
+        msg = (
             f"corpus is too short: need at least block_size + 1 = {block_size + 1} "
             f"tokens to cut a window plus its next-token answer, but only got "
             f"{len(data)}. Use a longer corpus or a smaller block_size."
         )
+        raise ValueError(msg)
     starts = rng.integers(0, max_start + 1, size=batch_size)
     x = np.stack([data[s : s + block_size] for s in starts])
     if mode == "sequence":
