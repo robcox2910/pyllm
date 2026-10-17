@@ -126,6 +126,28 @@ the breadcrumb trail (autograd), tokens, embeddings, attention, how a Transforme
 is built, how a model learns, sampling, and — the flagship lesson — growing your
 own data.
 
+## Developing alongside a sibling
+
+PyLLM uses a released version of [Pebble](https://github.com/robcox2910/pebble-lang),
+pinned to a tag in `pyproject.toml` (`[tool.uv.sources]`). To try an unreleased
+Pebble change, install your local checkout over the pinned one:
+
+```bash
+uv pip install -e ../pebble-lang
+```
+
+The next `uv sync` puts the pinned release back.
+
+## Releasing
+
+1. Merge the change to `main`.
+2. Tag it: `git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+   A change to the public API bumps the minor version (`v0.1.0` → `v0.2.0`);
+   anything else bumps the patch (`v0.1.0` → `v0.1.1`).
+3. Projects that use PyLLM (like [PyStack](https://github.com/robcox2910/pystack))
+   upgrade by editing the tag in their `[tool.uv.sources]` and running
+   `uv lock --upgrade-package pyllm`, in a pull request so CI checks the pair.
+
 ## Related projects — "from scratch in Python"
 
 PyLLM is **the brain** of a family of educational projects, each building a real
