@@ -1,3 +1,5 @@
+"""Linear: a fully-connected layer."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -12,16 +14,23 @@ class Linear(Module):
     nudge (`bias`). Learning just means turning the dials. Maths: `out = x @ W + b`.
     """
 
-    def __init__(self, in_features, out_features, bias=True, rng=None):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        *,
+        bias: bool = True,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        """Create randomly-set dials (and an optional bias nudge)."""
         if rng is None:
             rng = np.random.default_rng()
         scale = 1.0 / np.sqrt(in_features)
-        self.weight = Tensor(
-            rng.uniform(-scale, scale, size=(in_features, out_features))
-        )
-        self.bias = Tensor(np.zeros(out_features)) if bias else None
+        self.weight = Tensor(rng.uniform(-scale, scale, size=(in_features, out_features)))
+        self.bias: Tensor | None = Tensor(np.zeros(out_features)) if bias else None
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Mix the inputs: `x @ weight + bias`."""
         out = x @ self.weight
         if self.bias is not None:
             out = out + self.bias

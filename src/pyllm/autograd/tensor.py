@@ -54,6 +54,10 @@ class Tensor:
         """Return the size of each dimension, like (rows, columns)."""
         return self.data.shape
 
+    def set_backward(self, recipe: Callable[[], None]) -> None:
+        """Store the recipe that shares this tensor's blame with its parents."""
+        self._backward = recipe
+
     def __repr__(self) -> str:
         """Show the numbers and gradients, so printing a tensor is helpful."""
         return f"Tensor(data={self.data}, grad={self.grad})"

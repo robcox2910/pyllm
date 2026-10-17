@@ -1,5 +1,9 @@
+"""Attention: tokens deciding which earlier tokens to listen to."""
+
 import numpy as np
 
+from pyllm._types import Array
+from pyllm.autograd import Tensor
 from pyllm.nn.functional import concat, softmax
 from pyllm.nn.linear import Linear
 from pyllm.nn.module import Module
@@ -16,16 +20,24 @@ class Head(Module):
     backward -- you can't peek at words you haven't read yet.
     """
 
-    def __init__(self, embed_dim, head_size, block_size, rng=None):
+    def __init__(
+        self,
+        embed_dim: int,
+        head_size: int,
+        block_size: int,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        """Create the key, query and value dials and the "no peeking" mask."""
         self.key = Linear(embed_dim, head_size, bias=False, rng=rng)
         self.query = Linear(embed_dim, head_size, bias=False, rng=rng)
         self.value = Linear(embed_dim, head_size, bias=False, rng=rng)
         self.head_size = head_size
         # Buffer (NOT a parameter): -1e9 above the diagonal blocks the future.
         allowed = np.tril(np.ones((block_size, block_size)))
-        self.mask = np.where(allowed == 0, -1e9, 0.0)
+        self.mask: Array = np.where(allowed == 0, -1e9, 0.0)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Let each token listen to the earlier tokens that matter most to it."""
         seq_len = x.shape[1]
         q = self.query(x)  # (B, T, head_size)
         k = self.key(x)
@@ -46,14 +58,22 @@ class MultiHeadAttention(Module):
     Linear so the network can mix what every head found.
     """
 
-    def __init__(self, embed_dim, num_heads, block_size, rng=None):
-        assert embed_dim % num_heads == 0, "embed_dim must divide evenly by num_heads"
+    def __init__(
+        self,
+        embed_dim: int,
+        num_heads: int,
+        block_size: int,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        """Create the parallel heads and the final blending layer."""
+        if embed_dim % num_heads != 0:
+            msg = "embed_dim must divide evenly by num_heads"
+            raise AssertionError(msg)
         head_size = embed_dim // num_heads
-        self.heads = [
-            Head(embed_dim, head_size, block_size, rng=rng) for _ in range(num_heads)
-        ]
+        self.heads = [Head(embed_dim, head_size, block_size, rng=rng) for _ in range(num_heads)]
         self.proj = Linear(embed_dim, embed_dim, rng=rng)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Let each token listen to the earlier tokens that matter most to it."""
         combined = concat([head(x) for head in self.heads], axis=-1)
         return self.proj(combined)

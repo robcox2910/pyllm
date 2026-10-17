@@ -1,4 +1,7 @@
+"""Embedding: a lookup table giving each token its own vector."""
+
 import numpy as np
+from numpy.typing import ArrayLike
 
 from pyllm.autograd import Tensor
 from pyllm.nn.functional import embedding
@@ -14,10 +17,14 @@ class Embedding(Module):
     just looks up the row for each incoming token id.
     """
 
-    def __init__(self, num_embeddings, dim, rng=None):
+    def __init__(
+        self, num_embeddings: int, dim: int, rng: np.random.Generator | None = None
+    ) -> None:
+        """Fill the lookup table with small random numbers."""
         if rng is None:
             rng = np.random.default_rng()
         self.weight = Tensor(rng.normal(0.0, 1.0, size=(num_embeddings, dim)) * 0.02)
 
-    def forward(self, ids):
+    def forward(self, ids: ArrayLike) -> Tensor:
+        """Look up the vector for each token id."""
         return embedding(self.weight, ids)

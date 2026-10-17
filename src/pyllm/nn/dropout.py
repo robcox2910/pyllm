@@ -1,5 +1,8 @@
+"""Dropout: randomly ignoring signals during training."""
+
 import numpy as np
 
+from pyllm.autograd import Tensor
 from pyllm.nn.module import Module
 
 
@@ -13,12 +16,14 @@ class Dropout(Module):
     dropout does nothing.
     """
 
-    def __init__(self, p=0.1, rng=None):
+    def __init__(self, p: float = 0.1, rng: np.random.Generator | None = None) -> None:
+        """Set how many signals to drop (`p`) and where the randomness comes from."""
         self.p = p
         self.rng = rng if rng is not None else np.random.default_rng()
         self.training = True
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Drop random signals while training; pass everything through otherwise."""
         if not self.training or self.p == 0.0:
             return x
         keep = (self.rng.uniform(size=x.shape) > self.p) / (1.0 - self.p)

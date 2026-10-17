@@ -1,3 +1,8 @@
+"""Transformer building blocks: the repeatable brick of a GPT."""
+
+import numpy as np
+
+from pyllm.autograd import Tensor
 from pyllm.nn.attention import MultiHeadAttention
 from pyllm.nn.dropout import Dropout
 from pyllm.nn.functional import gelu
@@ -15,11 +20,13 @@ class FeedForward(Module):
     per-token reasoning happens.
     """
 
-    def __init__(self, embed_dim, rng=None):
+    def __init__(self, embed_dim: int, rng: np.random.Generator | None = None) -> None:
+        """Create the expand and shrink layers."""
         self.fc1 = Linear(embed_dim, 4 * embed_dim, rng=rng)
         self.fc2 = Linear(4 * embed_dim, embed_dim, rng=rng)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Expand, apply gelu, then shrink back."""
         return self.fc2(gelu(self.fc1(x)))
 
 
@@ -36,7 +43,15 @@ class TransformerBlock(Module):
     nothing at eval time, and the default of 0 leaves the block unchanged.
     """
 
-    def __init__(self, embed_dim, num_heads, block_size, dropout=0.0, rng=None):
+    def __init__(
+        self,
+        embed_dim: int,
+        num_heads: int,
+        block_size: int,
+        dropout: float = 0.0,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        """Create the attention step, the thinking step and their tidy-up layers."""
         self.ln1 = LayerNorm(embed_dim)
         self.attn = MultiHeadAttention(embed_dim, num_heads, block_size, rng=rng)
         self.drop1 = Dropout(dropout, rng=rng)
@@ -44,7 +59,7 @@ class TransformerBlock(Module):
         self.ffn = FeedForward(embed_dim, rng=rng)
         self.drop2 = Dropout(dropout, rng=rng)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Communicate, then think, keeping the original notes each time."""
         x = x + self.drop1(self.attn(self.ln1(x)))
-        x = x + self.drop2(self.ffn(self.ln2(x)))
-        return x
+        return x + self.drop2(self.ffn(self.ln2(x)))
