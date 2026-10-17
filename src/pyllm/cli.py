@@ -1,4 +1,7 @@
+"""The `pyllm` command line: generate, train, tokenize, write Pebble, grow a corpus."""
+
 import argparse
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -6,25 +9,25 @@ import numpy as np
 from pyllm.checkpoint import load, save
 from pyllm.data import PEBBLE_CHECKPOINT, POKEMON_CHECKPOINT, load_corpus
 from pyllm.generate import generate
-from pyllm.models import GPT, MLP, Bigram
+from pyllm.models import GPT, MLP, Bigram, LanguageModel
 from pyllm.pebble import PEBBLE_AVAILABLE, build_corpus, parse_rate
 from pyllm.pebble import referee as pebble_referee
 from pyllm.tokenizer import CharTokenizer
 from pyllm.training import train
 
 
-def _read_corpus(source):
-    """A corpus arg is either a bundled name ('pokemon') or a path to a file."""
+def _read_corpus(source: str) -> str:
+    """Read a corpus arg, which is either a bundled name ('pokemon') or a path to a file."""
     path = Path(source)
     if path.exists():
         return path.read_text(encoding="utf-8")
     return load_corpus(source)
 
 
-def run_generate(args, out=print):
+def run_generate(args: argparse.Namespace, out: Callable[[str], None] = print) -> int:
     """Default command: dream up new text from a trained checkpoint."""
     rng = np.random.default_rng(args.seed)
-    checkpoint = args.checkpoint if args.checkpoint else POKEMON_CHECKPOINT
+    checkpoint = args.checkpoint or POKEMON_CHECKPOINT
     model, tokenizer = load(checkpoint)
     text = generate(
         model,
@@ -39,12 +42,13 @@ def run_generate(args, out=print):
     return 0
 
 
-def run_train(args, out=print):
+def run_train(args: argparse.Namespace, out: Callable[[str], None] = print) -> int:
     """Train a model on a corpus and save a checkpoint."""
     rng = np.random.default_rng(args.seed)
     text = _read_corpus(args.corpus)
     tokenizer = CharTokenizer(text)
     data = np.array(tokenizer.encode(text))
+    model: LanguageModel
     if args.model == "bigram":
         model = Bigram(tokenizer.vocab_size, block_size=8, rng=rng)
     elif args.model == "mlp":
@@ -73,7 +77,7 @@ def run_train(args, out=print):
     return 0
 
 
-def run_tokenize(args, out=print):
+def run_tokenize(args: argparse.Namespace, out: Callable[[str], None] = print) -> int:
     """Show how a piece of text is chopped into token ids (a teaching demo)."""
     text = _read_corpus(args.corpus) if args.corpus else load_corpus("pokemon")
     tokenizer = CharTokenizer(text)
@@ -86,10 +90,10 @@ def run_tokenize(args, out=print):
     return 0
 
 
-def run_pebble(args, out=print):
+def run_pebble(args: argparse.Namespace, out: Callable[[str], None] = print) -> int:
     """Flagship demo: write Pebble code, and (optionally) grade what parses."""
     rng = np.random.default_rng(args.seed)
-    checkpoint = args.checkpoint if args.checkpoint else PEBBLE_CHECKPOINT
+    checkpoint = args.checkpoint or PEBBLE_CHECKPOINT
     model, tokenizer = load(checkpoint)
     try:
         text = generate(
@@ -115,7 +119,7 @@ def run_pebble(args, out=print):
     return 0
 
 
-def run_gen_corpus(args, out=print):
+def run_gen_corpus(args: argparse.Namespace, out: Callable[[str], None] = print) -> int:
     """Build-time helper: grow a synthetic Pebble corpus to a file."""
     rng = np.random.default_rng(args.seed)
     harvest = [Path(args.harvest)] if args.harvest else []
@@ -131,11 +135,9 @@ def run_gen_corpus(args, out=print):
     return 0
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> int:
     """Entry point for `pyllm`: no subcommand generates; `train`/`tokenize` too."""
-    parser = argparse.ArgumentParser(
-        prog="pyllm", description="A tiny LLM you can read."
-    )
+    parser = argparse.ArgumentParser(prog="pyllm", description="A tiny LLM you can read.")
     parser.set_defaults(func=run_generate)
     parser.add_argument("--prompt", default="")
     parser.add_argument("--max-new-tokens", type=int, default=100)

@@ -7,17 +7,21 @@ brain is loaded once and kept warm (cached) so the second call is instant. This
 is also the door PyStack knocks on to let Pebble programs use PyLLM.
 """
 
+from pathlib import Path
+
 import numpy as np
 
 from pyllm.checkpoint import load
 from pyllm.data import PEBBLE_CHECKPOINT, POKEMON_CHECKPOINT
 from pyllm.generate import generate
+from pyllm.models import LanguageModel
 from pyllm.pebble import referee as pebble_referee
+from pyllm.tokenizer import CharTokenizer
 
-_CACHE = {}
+_CACHE: dict[str, tuple[LanguageModel, CharTokenizer]] = {}
 
 
-def _load_cached(path):
+def _load_cached(path: Path) -> tuple[LanguageModel, CharTokenizer]:
     """Load a checkpoint once and remember it, so later calls are instant."""
     key = str(path)
     if key not in _CACHE:
@@ -48,6 +52,7 @@ def generate_pebble(
     max_new_tokens: int = 120,
     temperature: float = 0.7,
     seed: int | None = None,
+    *,
     constrained: bool = False,
 ) -> str:
     """Write Pebble-flavoured code using the bundled Pebble brain.

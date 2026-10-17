@@ -1,7 +1,32 @@
+"""Generation: dreaming up new text one character at a time."""
+
+from collections.abc import Callable
+from typing import Protocol
+
 import numpy as np
+from numpy.typing import ArrayLike
+
+from pyllm._types import Array
+from pyllm.models import LanguageModel
+from pyllm.tokenizer import Tokenizer
+
+_SEQUENCE_DIMS = 3
+"""Sequence models return (batch, position, vocab) scores: three dimensions."""
 
 
-def _probabilities(logits, temperature, top_k):
+class Referee(Protocol):
+    """A rule-checker that can judge half-written text (see `pyllm.pebble.referee`)."""
+
+    def viable(self, text: str) -> bool:
+        """Say whether `text` could still grow into something valid."""
+        ...
+
+    def complete(self, text: str) -> bool:
+        """Say whether `text` is finished and valid right now."""
+        ...
+
+
+def _probabilities(logits: Array, temperature: float, top_k: int | None) -> Array:
     """Turn raw scores into dice weights (temperature + optional top-k shortlist)."""
     logits = logits / temperature
     if top_k is not None and top_k > 0:
@@ -14,11 +39,18 @@ def _probabilities(logits, temperature, top_k):
     return probs / probs.sum()
 
 
-def _anything_goes(token):
+def _anything_goes(token: int) -> bool:  # noqa: ARG001
+    """Allow every token (the default when there is no referee)."""
     return True
 
 
-def sample_next(logits_row, temperature=1.0, top_k=None, rng=None, allowed=None):
+def sample_next(
+    logits_row: ArrayLike,
+    temperature: float = 1.0,
+    top_k: int | None = None,
+    rng: np.random.Generator | None = None,
+    allowed: Callable[[int], bool] | None = None,
+) -> int:
     """Pick the next token from the model's scores -- boldly or cautiously.
 
     The model hands back a score for every possible next character. We turn those
@@ -54,19 +86,20 @@ def sample_next(logits_row, temperature=1.0, top_k=None, rng=None, allowed=None)
     for token in np.argsort(-logits, kind="stable"):
         if allowed(int(token)):
             return int(token)
-    raise RuntimeError("the referee forbade every possible next token")
+    msg = "the referee forbade every possible next token"
+    raise RuntimeError(msg)
 
 
 def generate(
-    model,
-    tokenizer,
-    prompt="",
-    max_new_tokens=100,
-    temperature=1.0,
-    top_k=None,
-    rng=None,
-    referee=None,
-):
+    model: LanguageModel,
+    tokenizer: Tokenizer,
+    prompt: str = "",
+    max_new_tokens: int = 100,
+    temperature: float = 1.0,
+    top_k: int | None = None,
+    rng: np.random.Generator | None = None,
+    referee: Referee | None = None,
+) -> str:
     """Dream up new text one character at a time, feeding each guess back in.
 
     Start with the prompt, ask the model "what comes next?", roll for a character
@@ -83,10 +116,10 @@ def generate(
     if rng is None:
         rng = np.random.default_rng()
     if referee is not None and not referee.viable(prompt):
-        raise ValueError(
-            f"the prompt {prompt!r} already breaks the rules, "
-            "so it can never grow into valid code"
+        msg = (
+            f"the prompt {prompt!r} already breaks the rules, so it can never grow into valid code"
         )
+        raise ValueError(msg)
     model.eval()
     context = list(tokenizer.encode(prompt))
     text = prompt
@@ -102,11 +135,11 @@ def generate(
             window = [0]
         x = np.array([window], dtype=np.int64)
         logits = model(x).data
-        last_row = logits[0, -1] if logits.ndim == 3 else logits[0]
-        allowed = None
+        last_row = logits[0, -1] if logits.ndim == _SEQUENCE_DIMS else logits[0]
+        allowed: Callable[[int], bool] | None = None
         if referee is not None:
 
-            def legal(token, so_far=text):
+            def legal(token: int, so_far: str = text) -> bool:
                 return referee.viable(so_far + tokenizer.decode([token]))
 
             allowed = legal
