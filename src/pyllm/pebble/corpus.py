@@ -30,12 +30,12 @@ def _one_program(source):
 def canonicalize(source):
     """Tidy Pebble source into its one true formatting, via Pebble's formatter."""
     try:
-        from pebble.formatter import Formatter
+        from pebble import format_source
     except ImportError as exc:  # pragma: no cover - environment-dependent
         raise RuntimeError(
             "Canonicalizing needs pebble-lang. Install it: `uv sync --all-extras`."
         ) from exc
-    return Formatter(source).format()
+    return format_source(source)
 
 
 def build_corpus(rng, num_generated=400, harvest_paths=(), canonical=False):

@@ -1,31 +1,30 @@
 """Grade Pebble text by asking the real Pebble parser: "does this parse?"
 
-Because we own the Pebble toolchain, we have a perfect marker: feed a program to
-Pebble's own lexer and parser and see if it complains. Almost no AI project can
-objectively score its own output; we can. `is_valid` marks one program;
-`parse_rate` marks a pile of them and reports the percentage that pass.
+Because we own the Pebble toolchain, we have a perfect marker: hand a program
+to Pebble's own `check` (its lexer and parser) and see if it complains. Almost
+no AI project can objectively score its own output; we can. `is_valid` marks
+one program; `parse_rate` marks a pile of them and reports the percentage that
+pass.
 """
 
 
 def _require_pebble():
     """Import the Pebble oracle lazily, with a friendly error if it's missing."""
     try:
-        from pebble.errors import PebbleError
-        from pebble.lexer import Lexer
-        from pebble.parser import Parser
+        from pebble import PebbleError, check
     except ImportError as exc:  # pragma: no cover - environment-dependent
         raise RuntimeError(
             "Live Pebble scoring needs pebble-lang. Install the optional extra: "
-            "`uv sync --all-extras` (uses ../pebble-lang)."
+            "`uv sync --all-extras`."
         ) from exc
-    return Lexer, Parser, PebbleError
+    return check, PebbleError
 
 
 def is_valid(source):
     """True if `source` is syntactically valid Pebble (it lexes and parses)."""
-    Lexer, Parser, PebbleError = _require_pebble()
+    check, PebbleError = _require_pebble()
     try:
-        Parser(Lexer(source).tokenize()).parse()
+        check(source)
     except PebbleError:
         return False
     return True
