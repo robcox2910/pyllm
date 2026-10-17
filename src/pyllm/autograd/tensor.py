@@ -1,7 +1,16 @@
+"""Tensor: a grid of numbers that remembers how it was made, so gradients can flow back."""
+
+from collections.abc import Callable, Iterable
+
 import numpy as np
+from numpy.typing import ArrayLike
+
+from pyllm._types import Array
+
+type Operand = "Tensor | ArrayLike"
 
 
-def _unbroadcast(grad, shape):
+def _unbroadcast(grad: Array, shape: tuple[int, ...]) -> Array:
     """Sum `grad` back down to `shape`, reversing numpy broadcasting.
 
     Broadcasting often expands a tensor (e.g., shape (2,) to (2, 2)).
@@ -32,21 +41,24 @@ class Tensor:
     `grad`  — how much this tensor should change to make the final answer smaller.
     """
 
-    def __init__(self, data, _children=(), _op=""):
+    def __init__(self, data: ArrayLike, _children: Iterable[Tensor] = (), _op: str = "") -> None:
+        """Wrap `data` as a tensor, remembering which tensors it came from (`_children`)."""
         self.data = np.array(data, dtype=np.float64)
         self.grad = np.zeros_like(self.data)
-        self._backward = lambda: None
-        self._prev = set(_children)
+        self._backward: Callable[[], None] = lambda: None
+        self._prev: set[Tensor] = set(_children)
         self._op = _op
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, ...]:
+        """Return the size of each dimension, like (rows, columns)."""
         return self.data.shape
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Show the numbers and gradients, so printing a tensor is helpful."""
         return f"Tensor(data={self.data}, grad={self.grad})"
 
-    def __add__(self, other):
+    def __add__(self, other: Operand) -> Tensor:
         """Pour two cups of water together to get one bigger cup.
 
         When we add `a + b`, the result is just the combined total — simple!
@@ -58,7 +70,7 @@ class Tensor:
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data + other.data, (self, other), "+")
 
-        def _backward():
+        def _backward() -> None:
             # Gradients push back to both parents, unbroadcasting as needed.
             self.grad += _unbroadcast(out.grad, self.data.shape)
             other.grad += _unbroadcast(out.grad, other.data.shape)
@@ -66,14 +78,14 @@ class Tensor:
         out._backward = _backward
         return out
 
-    def __radd__(self, other):
+    def __radd__(self, other: Operand) -> Tensor:
         """Support `scalar + Tensor` — called when the left side isn't a Tensor.
 
         Flips the order and delegates to `__add__`, so `3 + t` works like `t + 3`.
         """
         return self + other
 
-    def __mul__(self, other):
+    def __mul__(self, other: Operand) -> Tensor:
         """Scale one number by another — like doubling a recipe.
 
         If you double the amount of flour (`a * 2`), the whole cake gets twice as big.
@@ -85,7 +97,7 @@ class Tensor:
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data * other.data, (self, other), "*")
 
-        def _backward():
+        def _backward() -> None:
             # Gradient with respect to self: out.grad * other (d(a*b)/da = b)
             # Gradient with respect to other: out.grad * self (d(a*b)/db = a)
             self.grad += _unbroadcast(out.grad * other.data, self.data.shape)
@@ -94,14 +106,14 @@ class Tensor:
         out._backward = _backward
         return out
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Operand) -> Tensor:
         """Support `scalar * Tensor` — called when the left side isn't a Tensor.
 
         Flips the order and delegates to `__mul__`, so `3 * t` works like `t * 3`.
         """
         return self * other
 
-    def __neg__(self):
+    def __neg__(self) -> Tensor:
         """Flip the sign, like owing money instead of having it.
 
         Negation is just multiplication by -1, so gradients flow backward
@@ -109,7 +121,7 @@ class Tensor:
         """
         return self * -1.0
 
-    def __sub__(self, other):
+    def __sub__(self, other: Operand) -> Tensor:
         """Take away — like removing coins from a pile.
 
         Subtraction is built from addition and negation, so gradients
@@ -118,30 +130,31 @@ class Tensor:
         other = other if isinstance(other, Tensor) else Tensor(other)
         return self + (-other)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: Operand) -> Tensor:
         """Support `scalar - Tensor` — called when the left side isn't a Tensor.
 
         Flips the operation via negation: `c - t` becomes `(-t) + c`.
         """
         return (-self) + other
 
-    def __pow__(self, power):
+    def __pow__(self, power: float) -> Tensor:
         """Repeated multiplication, e.g., squaring (x^2) or cubing (x^3).
 
         The slope of x^n is n·x^(n-1), so exponentiation is the only new
         primitive here; the gradient flows back via that power rule.
         """
-        if not isinstance(power, (int, float)):
-            raise TypeError("Tensor ** power supports int/float exponents only")
+        if not isinstance(power, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
+            msg = "Tensor ** power supports int/float exponents only"
+            raise TypeError(msg)
         out = Tensor(self.data**power, (self,), f"**{power}")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += (power * self.data ** (power - 1)) * out.grad
 
         out._backward = _backward
         return out
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Operand) -> Tensor:
         """Share into equal parts — like splitting a pizza among friends.
 
         Division is built as multiply by the reciprocal: `a / b` becomes
@@ -150,14 +163,14 @@ class Tensor:
         other = other if isinstance(other, Tensor) else Tensor(other)
         return self * (other**-1)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: Operand) -> Tensor:
         """Support `scalar / Tensor` — called when the left side isn't a Tensor.
 
         Reorders via power: `c / t` becomes `(t ** -1) * c`.
         """
         return (self**-1) * other
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: Tensor) -> Tensor:
         """Combine two tables of numbers — like running many recipes at once.
 
         Imagine `A` is a table of ingredients (one row per dish) and `B` is a
@@ -173,18 +186,14 @@ class Tensor:
         """
         out = Tensor(self.data @ other.data, (self, other), "@")
 
-        def _backward():
-            self.grad += _unbroadcast(
-                out.grad @ other.data.swapaxes(-1, -2), self.data.shape
-            )
-            other.grad += _unbroadcast(
-                self.data.swapaxes(-1, -2) @ out.grad, other.data.shape
-            )
+        def _backward() -> None:
+            self.grad += _unbroadcast(out.grad @ other.data.swapaxes(-1, -2), self.data.shape)
+            other.grad += _unbroadcast(self.data.swapaxes(-1, -2) @ out.grad, other.data.shape)
 
         out._backward = _backward
         return out
 
-    def sum(self, axis=None, keepdims=False):
+    def sum(self, axis: int | None = None, *, keepdims: bool = False) -> Tensor:
         """Pile up all the numbers into one stack; each piece shares the blame equally.
 
         Like adding up everyone's pocket money into one pile: if the total is wrong,
@@ -192,7 +201,7 @@ class Tensor:
         """
         out = Tensor(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
 
-        def _backward():
+        def _backward() -> None:
             grad = out.grad
             if axis is not None and not keepdims:
                 grad = np.expand_dims(grad, axis)
@@ -201,7 +210,7 @@ class Tensor:
         out._backward = _backward
         return out
 
-    def mean(self, axis=None, keepdims=False):
+    def mean(self, axis: int | None = None, *, keepdims: bool = False) -> Tensor:
         """Find the average — each number pitches in equally to the overall picture.
 
         Like a class average: each student's score contributes a fair (1/N) share,
@@ -210,7 +219,7 @@ class Tensor:
         out = Tensor(self.data.mean(axis=axis, keepdims=keepdims), (self,), "mean")
         count = self.data.size if axis is None else self.data.shape[axis]
 
-        def _backward():
+        def _backward() -> None:
             grad = out.grad
             if axis is not None and not keepdims:
                 grad = np.expand_dims(grad, axis)
@@ -219,8 +228,8 @@ class Tensor:
         out._backward = _backward
         return out
 
-    def relu(self):
-        """A one-way gate for numbers — lets positive signals through, blocks negatives.
+    def relu(self) -> Tensor:
+        """Gate numbers one way, letting positive signals through and blocking negatives.
 
         Think of a water valve that only opens when water is flowing forward: positive
         numbers pass unchanged, but negatives get shut out (become zero). Gradient is 1
@@ -228,13 +237,13 @@ class Tensor:
         """
         out = Tensor(np.maximum(0.0, self.data), (self,), "relu")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += (out.data > 0.0) * out.grad
 
         out._backward = _backward
         return out
 
-    def exp(self):
+    def exp(self) -> Tensor:
         """Rapid growth, like money doubling each time — the faster the more it grows.
 
         Exponential turns small numbers into huge ones (e^2 ≈ 7, e^5 ≈ 148), and the
@@ -242,28 +251,28 @@ class Tensor:
         """
         out = Tensor(np.exp(self.data), (self,), "exp")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += out.data * out.grad
 
         out._backward = _backward
         return out
 
-    def log(self):
-        """The opposite of exp — undoes growth by asking 'e to what power equals this?'
+    def log(self) -> Tensor:
+        """Undo growth by asking 'e to what power equals this?'.
 
         Log shrinks big numbers down (log(e^2) = 2, log(100) ≈ 4.6), so it's the
         inverse of exponential. Its gradient is 1/x, so it gets flatter as x grows.
         """
         out = Tensor(np.log(self.data), (self,), "log")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += (1.0 / self.data) * out.grad
 
         out._backward = _backward
         return out
 
-    def tanh(self):
-        """A squasher that gently flattens any number into the range -1 to 1.
+    def tanh(self) -> Tensor:
+        """Gently squash any number into the range -1 to 1.
 
         No matter how big or negative your number is, tanh squeezes it: tanh(0) = 0,
         tanh(big) ≈ 1, tanh(-big) ≈ -1. Its gradient is 1 - tanh²(x), so the slope is
@@ -272,13 +281,13 @@ class Tensor:
         t = np.tanh(self.data)
         out = Tensor(t, (self,), "tanh")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += (1.0 - t * t) * out.grad
 
         out._backward = _backward
         return out
 
-    def transpose(self):
+    def transpose(self) -> Tensor:
         """Flip a table on its side — swap the last two axes (rows <-> columns).
 
         Like turning a class register so the names run across the top instead of
@@ -287,13 +296,13 @@ class Tensor:
         """
         out = Tensor(self.data.swapaxes(-1, -2), (self,), "transpose")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += out.grad.swapaxes(-1, -2)
 
         out._backward = _backward
         return out
 
-    def reshape(self, shape):
+    def reshape(self, shape: tuple[int, ...]) -> Tensor:
         """Rearrange the same numbers into a differently shaped box.
 
         Like tipping a tray of 6 buns into a 2x3 arrangement or a 3x2 one --
@@ -304,13 +313,13 @@ class Tensor:
         """
         out = Tensor(self.data.reshape(shape), (self,), "reshape")
 
-        def _backward():
+        def _backward() -> None:
             self.grad += out.grad.reshape(self.data.shape)
 
         out._backward = _backward
         return out
 
-    def backward(self):
+    def backward(self) -> None:
         """Run reverse-mode autodiff from this tensor to all ancestors.
 
         Builds a topological order of the compute graph (dependencies-last),
@@ -318,10 +327,10 @@ class Tensor:
         in reverse topological order, calling each node's _backward closure
         to accumulate gradients in its parents.
         """
-        topo = []
-        visited = set()
+        topo: list[Tensor] = []
+        visited: set[Tensor] = set()
 
-        def build(node):
+        def build(node: Tensor) -> None:
             """Depth-first traversal: visit ancestors, then append this node."""
             if node not in visited:
                 visited.add(node)
@@ -337,9 +346,9 @@ class Tensor:
         self.grad = np.ones_like(self.data)
         # Walk backward: reverse topological order runs _backward closures.
         for node in reversed(topo):
-            node._backward()
+            node._backward()  # noqa: SLF001 - same class, so this is our own recipe
 
-    def zero_grad(self):
+    def zero_grad(self) -> None:
         """Wipe the slate clean before the next learning step.
 
         Like erasing last round's notes so this round's blame doesn't pile on top.

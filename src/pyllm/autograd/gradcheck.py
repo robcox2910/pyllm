@@ -1,7 +1,14 @@
+"""Finite-difference gradient checking: an independent test that backward() is right."""
+
+from collections.abc import Callable
+
 import numpy as np
 
+from pyllm._types import Array
+from pyllm.autograd.tensor import Tensor
 
-def numerical_grad(make_output, wrt, eps=1e-6):
+
+def numerical_grad(make_output: Callable[[], Tensor], wrt: Tensor, eps: float = 1e-6) -> Array:
     """Finite-difference gradient of sum(make_output().data) w.r.t. `wrt`.
 
     `make_output` is a function taking no arguments that builds and returns an

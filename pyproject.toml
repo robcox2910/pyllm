@@ -65,16 +65,48 @@ packages = ["src/pyllm"]
 "src/pyllm/data/pebble.npz" = "pyllm/data/pebble.npz"
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py314"
+src = ["src", "tests"]
+exclude = ["src/pyllm/_version.py"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = [
+    "E", "W", "F", "I", "N", "UP", "B", "C4", "C90", "PTH", "SIM",
+    "TID", "S", "PERF", "FURB", "PIE", "T10", "T20", "ERA", "PL",
+    "RET", "ARG", "FBT", "DTZ", "ICN", "PT", "D", "RUF", "A", "BLE",
+    "EM", "FLY", "ISC", "PGH", "RSE", "SLF", "TRY",
+]
+ignore = [
+    "E501", "D203", "D213", "ISC001", "TRY003", "TRY300",
+    "PIE807", "PLW0108", "FBT001", "FBT003",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pylint]
+max-args = 9
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "SLF001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
 
 [tool.pyright]
 include = ["src", "tests"]
 pythonVersion = "3.14"
-typeCheckingMode = "basic"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+extraPaths = ["."]
+reportPrivateUsage = false
 
 [tool.pytest.ini_options]
 addopts = "--cov=src/pyllm --cov-report=term-missing --cov-fail-under=90"
