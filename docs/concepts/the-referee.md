@@ -89,3 +89,7 @@ The model didn't get any smarter — it's the same tiny brain. We just made it
 produce valid JSON, valid code, or answers that fit a form: rather than hoping a
 huge model behaves, they let a rule-checker veto illegal tokens. Knowing the
 rules perfectly is often easier than learning them perfectly.
+
+## See also
+
+- [Pebble: the parser](https://robcox2910.github.io/pebble-lang/concepts/parser/) -- the real parser whose grammar the referee copies, so you can see how Pebble reads code.

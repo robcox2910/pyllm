@@ -51,3 +51,7 @@ programs and report the percentage — that's the model's grade.
 "Grow your own data and measure it" is one of the most useful ideas in all of AI.
 When you can *generate* examples and *check* them automatically, you can teach a
 model almost anything — even a language that didn't exist last week.
+
+## See also
+
+- [Pebble](https://robcox2910.github.io/pebble-lang/) -- the little language whose documentation snippets we harvest as training data.
