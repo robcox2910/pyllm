@@ -150,6 +150,21 @@ puts the pinned release back, which is how you undo the override.
    upgrade by editing the tag in their `[tool.uv.sources]` and running
    `uv lock --upgrade-package pyllm`, in a pull request so CI checks the pair.
 
+## PyLLM inside PyStack
+
+PyLLM is **the brain** of a family of educational projects, each building a real
+system from scratch to teach how it works. They're tied together by
+**[PyStack](https://github.com/robcox2910/pystack)**, where a Pebble program can
+even `import "llm"` and ask PyLLM to write more code.
+
+Once PyLLM is installed as a PyStack plugin, any Pebble program can call it:
+
+```pebble
+import "llm"
+let code = llm_generate("a function that adds two numbers")
+print(code)
+```
+
 <!-- series:start -->
 ## Related Projects
 
