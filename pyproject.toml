@@ -89,7 +89,7 @@ max-complexity = 15
 max-args = 9
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "SLF001"]
+"tests/**/*.py" = ["S101", "SLF001", "PLR2004", "PLC0415"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -1,3 +1,5 @@
+"""Tests for attention."""
+
 import numpy as np
 import pytest
 
@@ -6,6 +8,7 @@ from pyllm.nn.attention import Head, MultiHeadAttention
 
 
 def test_head_output_shape():
+    """Head output shape."""
     head = Head(embed_dim=8, head_size=4, block_size=16, rng=np.random.default_rng(0))
     x = Tensor(np.ones((2, 5, 8)))  # (B, T, embed_dim)
     assert head(x).shape == (2, 5, 4)
@@ -13,6 +16,7 @@ def test_head_output_shape():
 
 def test_head_is_causal():
     # Changing the LAST time step must not change outputs at earlier steps.
+    """Head is causal."""
     head = Head(embed_dim=8, head_size=4, block_size=16, rng=np.random.default_rng(0))
     rng = np.random.default_rng(1)
     base = rng.normal(size=(1, 5, 8))
@@ -26,27 +30,27 @@ def test_head_is_causal():
 
 
 def test_head_parameters_exclude_mask():
+    """Head parameters exclude mask."""
     head = Head(embed_dim=8, head_size=4, block_size=16, rng=np.random.default_rng(0))
     # 3 bias-free Linear layers, 1 weight each -> 3 params (mask is a buffer)
     assert len(head.parameters()) == 3
 
 
 def test_multihead_output_shape():
-    mha = MultiHeadAttention(
-        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
-    )
+    """Multihead output shape."""
+    mha = MultiHeadAttention(embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0))
     x = Tensor(np.ones((2, 5, 8)))
     assert mha(x).shape == (2, 5, 8)
 
 
 def test_multihead_requires_divisible_dim():
+    """Multihead requires divisible dim."""
     with pytest.raises(AssertionError):
         MultiHeadAttention(embed_dim=8, num_heads=3, block_size=16)
 
 
 def test_multihead_collects_all_head_and_proj_params():
-    mha = MultiHeadAttention(
-        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
-    )
+    """Multihead collects all head and proj params."""
+    mha = MultiHeadAttention(embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0))
     # 2 heads x 3 params + proj (weight + bias) = 6 + 2 = 8
     assert len(mha.parameters()) == 8

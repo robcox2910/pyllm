@@ -1,3 +1,7 @@
+"""Tests for checkpoint."""
+
+from pathlib import Path
+
 import numpy as np
 
 from pyllm.checkpoint import load, save
@@ -6,7 +10,8 @@ from pyllm.models import GPT
 from pyllm.tokenizer import CharTokenizer
 
 
-def test_save_load_roundtrips_config_and_weights(tmp_path):
+def test_save_load_roundtrips_config_and_weights(tmp_path: Path):
+    """Save load roundtrips config and weights."""
     text = "pikachu"
     tok = CharTokenizer(text)
     model = GPT(
@@ -19,13 +24,14 @@ def test_save_load_roundtrips_config_and_weights(tmp_path):
     )
     path = tmp_path / "model.npz"
     save(path, model, tok)
-    reloaded, reloaded_tok = load(path)
+    reloaded, _ = load(path)
     assert reloaded.config() == model.config()
     for a, b in zip(model.parameters(), reloaded.parameters(), strict=True):
         assert np.allclose(a.data, b.data)
 
 
-def test_reloaded_tokenizer_matches(tmp_path):
+def test_reloaded_tokenizer_matches(tmp_path: Path):
+    """Reloaded tokenizer matches."""
     text = "bulbasaur"
     tok = CharTokenizer(text)
     model = GPT(
@@ -43,7 +49,8 @@ def test_reloaded_tokenizer_matches(tmp_path):
     assert reloaded_tok.decode(reloaded_tok.encode("bulba")) == "bulba"
 
 
-def test_reloaded_model_generates_identically(tmp_path):
+def test_reloaded_model_generates_identically(tmp_path: Path):
+    """Reloaded model generates identically."""
     text = "charmander"
     tok = CharTokenizer(text)
     model = GPT(
@@ -57,9 +64,7 @@ def test_reloaded_model_generates_identically(tmp_path):
     path = tmp_path / "m.npz"
     save(path, model, tok)
     reloaded, reloaded_tok = load(path)
-    a = generate(
-        model, tok, prompt="c", max_new_tokens=10, rng=np.random.default_rng(3)
-    )
+    a = generate(model, tok, prompt="c", max_new_tokens=10, rng=np.random.default_rng(3))
     b = generate(
         reloaded,
         reloaded_tok,

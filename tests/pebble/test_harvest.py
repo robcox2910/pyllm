@@ -1,3 +1,7 @@
+"""Tests for harvest."""
+
+from pathlib import Path
+
 from pyllm.pebble.harvest import harvest_dir, harvest_text
 
 _MD = """# Title
@@ -22,6 +26,7 @@ fn f() { return 1 }
 
 
 def test_harvest_text_extracts_only_pebble_blocks():
+    """Harvest text extracts only pebble blocks."""
     blocks = harvest_text(_MD)
     assert len(blocks) == 2
     assert blocks[0] == "let x = 1\nprint(x)"
@@ -29,10 +34,12 @@ def test_harvest_text_extracts_only_pebble_blocks():
 
 
 def test_harvest_text_no_blocks_returns_empty():
+    """Harvest text no blocks returns empty."""
     assert harvest_text("just prose, no code") == []
 
 
-def test_harvest_dir_reads_markdown_files(tmp_path):
+def test_harvest_dir_reads_markdown_files(tmp_path: Path):
+    """Harvest dir reads markdown files."""
     (tmp_path / "a.md").write_text("```pebble\nlet a = 1\n```\n", encoding="utf-8")
     (tmp_path / "b.md").write_text("```pebble\nlet b = 2\n```\n", encoding="utf-8")
     (tmp_path / "c.txt").write_text("```pebble\nlet c = 3\n```\n", encoding="utf-8")

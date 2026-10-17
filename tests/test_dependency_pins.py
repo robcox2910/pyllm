@@ -12,10 +12,12 @@ TAG_PATTERN = re.compile(r"v\d+\.\d+\.\d+")
 
 
 def _sources() -> dict[str, dict[str, str]]:
+    """Read the sibling sources table from pyproject."""
     return tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["tool"]["uv"]["sources"]
 
 
 def test_every_sibling_source_is_a_tagged_git_source():
+    """Every sibling source is a tagged git source."""
     for name, source in _sources().items():
         assert set(source) == {"git", "tag"}, name
         assert source["git"] == f"{GITHUB}/{REPOS.get(name, name)}", name

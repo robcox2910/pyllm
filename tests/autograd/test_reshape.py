@@ -1,3 +1,5 @@
+"""Tests for reshape."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -5,6 +7,7 @@ from pyllm.autograd.gradcheck import numerical_grad
 
 
 def test_reshape_forward_changes_shape_not_data():
+    """Reshape forward changes shape not data."""
     t = Tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])  # (2, 3)
     out = t.reshape((3, 2))
     assert out.shape == (3, 2)
@@ -12,14 +15,17 @@ def test_reshape_forward_changes_shape_not_data():
 
 
 def test_reshape_flattens_last_two_axes():
+    """Reshape flattens last two axes."""
     t = Tensor(np.ones((4, 2, 3)))  # (B, T, D)
     assert t.reshape((4, 6)).shape == (4, 6)
 
 
 def test_reshape_backward():
+    """Reshape backward."""
     a = Tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 
     def make_output():
+        """Make output."""
         return (a.reshape((6,)) * 2.0).sum()
 
     out = make_output()

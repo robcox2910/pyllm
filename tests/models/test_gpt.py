@@ -1,3 +1,5 @@
+"""Tests for gpt."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -6,6 +8,7 @@ from pyllm.nn import cross_entropy
 
 
 def test_gpt_logits_shape():
+    """Gpt logits shape."""
     model = GPT(
         vocab_size=6,
         block_size=8,
@@ -19,6 +22,7 @@ def test_gpt_logits_shape():
 
 
 def test_gpt_mode_and_config():
+    """Gpt mode and config."""
     model = GPT(
         vocab_size=6,
         block_size=8,
@@ -40,6 +44,7 @@ def test_gpt_mode_and_config():
 
 def test_gpt_is_causal():
     # Disturbing the LAST position must not change earlier-position logits.
+    """Gpt is causal."""
     model = GPT(
         vocab_size=6,
         block_size=8,
@@ -57,6 +62,7 @@ def test_gpt_is_causal():
 
 
 def test_gpt_trains_end_to_end_gradient_flow():
+    """Gpt trains end to end gradient flow."""
     model = GPT(
         vocab_size=6,
         block_size=8,

@@ -1,3 +1,5 @@
+"""Tests for module."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -5,22 +7,28 @@ from pyllm.nn.module import Module
 
 
 class _Tiny(Module):
+    """Tiny tests."""
+
     def __init__(self):
         self.w = Tensor([1.0, 2.0])
         self.b = Tensor([0.0])
         self.not_a_param = 42
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward."""
         return x + self.b
 
 
 class _Nested(Module):
+    """Nested tests."""
+
     def __init__(self):
         self.layer = _Tiny()
         self.heads = [_Tiny(), _Tiny()]
 
 
 def test_parameters_collects_only_tensors():
+    """Parameters collects only tensors."""
     params = _Tiny().parameters()
     assert len(params) == 2
     assert all(isinstance(p, Tensor) for p in params)
@@ -28,10 +36,12 @@ def test_parameters_collects_only_tensors():
 
 def test_parameters_recurses_into_submodules_and_lists():
     # 1 submodule (2) + 2 heads (2 each) = 6 tensors
+    """Parameters recurses into submodules and lists."""
     assert len(_Nested().parameters()) == 6
 
 
 def test_zero_grad_zeros_all_params():
+    """Zero grad zeros all params."""
     m = _Tiny()
     for p in m.parameters():
         p.grad += 5.0
@@ -40,15 +50,19 @@ def test_zero_grad_zeros_all_params():
 
 
 def test_call_delegates_to_forward():
+    """Call delegates to forward."""
     m = _Tiny()
     out = m(Tensor([10.0]))
     assert out.data.tolist() == [10.0]
 
 
 def test_parameters_dedupes_shared_tensor():
+    """Parameters dedupes shared tensor."""
     shared = Tensor([1.0, 2.0])
 
     class _Tied(Module):
+        """Tied tests."""
+
         def __init__(self):
             self.a = shared
             self.b = shared  # same tensor referenced twice (weight tying)
@@ -59,9 +73,12 @@ def test_parameters_dedupes_shared_tensor():
 
 
 def test_train_eval_recurses_into_children():
+    """Train eval recurses into children."""
     from pyllm.nn.dropout import Dropout
 
     class _Net(Module):
+        """Net tests."""
+
         def __init__(self):
             self.drop = Dropout(p=0.5)
             self.drops = [Dropout(p=0.5), Dropout(p=0.5)]

@@ -1,3 +1,5 @@
+"""Tests for transformer."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -5,23 +7,22 @@ from pyllm.nn.transformer import FeedForward, TransformerBlock
 
 
 def test_feedforward_preserves_shape():
+    """Feedforward preserves shape."""
     ff = FeedForward(8, rng=np.random.default_rng(0))
     x = Tensor(np.ones((2, 5, 8)))
     assert ff(x).shape == (2, 5, 8)
 
 
 def test_transformer_block_preserves_shape():
-    block = TransformerBlock(
-        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
-    )
+    """Transformer block preserves shape."""
+    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0))
     x = Tensor(np.ones((2, 5, 8)))
     assert block(x).shape == (2, 5, 8)
 
 
 def test_transformer_block_is_causal():
-    block = TransformerBlock(
-        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
-    )
+    """Transformer block is causal."""
+    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0))
     rng = np.random.default_rng(2)
     base = rng.normal(size=(1, 6, 8))
     changed = base.copy()
@@ -32,9 +33,8 @@ def test_transformer_block_is_causal():
 
 
 def test_transformer_block_gradients_flow_to_input():
-    block = TransformerBlock(
-        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
-    )
+    """Transformer block gradients flow to input."""
+    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0))
     x = Tensor(np.ones((1, 4, 8)))
     block(x).sum().backward()
     assert np.any(x.grad != 0.0)
@@ -43,15 +43,15 @@ def test_transformer_block_gradients_flow_to_input():
 def test_dropout_defaults_to_off():
     # With dropout=0.0 the block is a deterministic computation: calling it twice
     # on the same input gives the same result, even in train mode.
-    block = TransformerBlock(
-        embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0)
-    )
+    """Dropout defaults to off."""
+    block = TransformerBlock(embed_dim=8, num_heads=2, block_size=16, rng=np.random.default_rng(0))
     block.train()
     x = Tensor(np.random.default_rng(1).normal(size=(1, 4, 8)))
     assert np.array_equal(block(x).data, block(x).data)
 
 
 def test_dropout_activates_in_train_mode_but_not_eval():
+    """Dropout activates in train mode but not eval."""
     block = TransformerBlock(
         embed_dim=8,
         num_heads=2,

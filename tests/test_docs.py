@@ -1,7 +1,10 @@
+"""Tests for docs."""
+
 from pathlib import Path
 
 
 def test_autograd_concept_doc_exists_and_covers_key_ideas():
+    """Autograd concept doc exists and covers key ideas."""
     doc = Path("docs/concepts/autograd.md")
     assert doc.exists(), "RULE #1: every plan ships a kid-friendly concept doc"
     text = doc.read_text().lower()
@@ -11,6 +14,7 @@ def test_autograd_concept_doc_exists_and_covers_key_ideas():
 
 
 def test_plan2_concept_docs_exist_and_cover_key_ideas():
+    """Plan2 concept docs exist and cover key ideas."""
     from pathlib import Path
 
     checks = {
@@ -27,6 +31,7 @@ def test_plan2_concept_docs_exist_and_cover_key_ideas():
 
 
 def test_plan3_concept_docs_exist_and_cover_key_ideas():
+    """Plan3 concept docs exist and cover key ideas."""
     from pathlib import Path
 
     checks = {
@@ -43,6 +48,7 @@ def test_plan3_concept_docs_exist_and_cover_key_ideas():
 
 
 def test_plan4_concept_doc_exists_and_covers_key_ideas():
+    """Plan4 concept doc exists and covers key ideas."""
     from pathlib import Path
 
     doc = Path("docs/concepts/grow-your-own-data.md")
@@ -53,6 +59,7 @@ def test_plan4_concept_doc_exists_and_covers_key_ideas():
 
 
 def test_concepts_index_links_every_doc():
+    """Concepts index links every doc."""
     from pathlib import Path
 
     index = Path("docs/concepts/README.md")
@@ -72,6 +79,7 @@ def test_concepts_index_links_every_doc():
 
 
 def test_plan6_referee_concept_doc_exists_and_covers_key_ideas():
+    """Plan6 referee concept doc exists and covers key ideas."""
     doc = Path("docs/concepts/the-referee.md")
     assert doc.exists(), "RULE #1: missing concept doc docs/concepts/the-referee.md"
     text = doc.read_text().lower()
