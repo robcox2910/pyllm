@@ -1,12 +1,20 @@
+"""Tests for pebble available."""
+
+
 def test_pebble_is_importable_in_dev_env():
-    # In the dev/build environment (with the optional `pebble` extra installed),
-    # the pebble-lang oracle must be importable. Skipped elsewhere.
+    """Pebble is importable in the dev env, where the optional `pebble` extra is installed.
+
+    The pebble-lang oracle must be importable there; the test is skipped elsewhere.
+    """
     import importlib.util
 
     if importlib.util.find_spec("pebble") is None:
         import pytest
 
         pytest.skip("pebble-lang not installed (optional build-time dependency)")
-    from pebble.formatter import Formatter  # noqa: F401
-    from pebble.lexer import Lexer  # noqa: F401
-    from pebble.parser import Parser  # noqa: F401
+    for module, name in [
+        ("pebble.formatter", "Formatter"),
+        ("pebble.lexer", "Lexer"),
+        ("pebble.parser", "Parser"),
+    ]:
+        assert hasattr(importlib.import_module(module), name)

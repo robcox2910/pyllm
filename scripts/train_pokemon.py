@@ -4,6 +4,8 @@ Run once with `uv run python scripts/train_pokemon.py`; the resulting
 `src/pyllm/data/pokemon.npz` is committed so the shipped CLI generates instantly.
 """
 
+import sys
+
 import numpy as np
 
 from pyllm.checkpoint import save
@@ -14,7 +16,12 @@ from pyllm.tokenizer import CharTokenizer
 from pyllm.training import train
 
 
-def build_and_train(rng):
+def _say(message: str) -> None:
+    """Show a message on the screen."""
+    sys.stdout.write(message + "\n")
+
+
+def build_and_train(rng: np.random.Generator) -> tuple[GPT, CharTokenizer]:
     """Train a small Pokémon GPT and return (model, tokenizer)."""
     text = load_corpus("pokemon")
     tokenizer = CharTokenizer(text)
@@ -31,11 +38,12 @@ def build_and_train(rng):
     return model, tokenizer
 
 
-def main():
+def main() -> None:
+    """Run the build step and report what happened."""
     rng = np.random.default_rng(1234)
     model, tokenizer = build_and_train(rng)
     save(POKEMON_CHECKPOINT, model, tokenizer)
-    print(f"saved checkpoint to {POKEMON_CHECKPOINT}")
+    _say(f"saved checkpoint to {POKEMON_CHECKPOINT}")
     sample = generate(
         model,
         tokenizer,
@@ -44,8 +52,8 @@ def main():
         temperature=0.8,
         rng=np.random.default_rng(0),
     )
-    print("--- sample dream ---")
-    print(sample)
+    _say("--- sample dream ---")
+    _say(sample)
 
 
 if __name__ == "__main__":

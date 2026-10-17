@@ -1,3 +1,5 @@
+"""Tests for loop."""
+
 import numpy as np
 
 from pyllm.models import MLP, Bigram
@@ -5,6 +7,7 @@ from pyllm.training import train
 
 
 def test_train_returns_loss_per_step():
+    """Train returns loss per step."""
     rng = np.random.default_rng(0)
     data = np.array([0, 1, 2, 3] * 50)
     model = Bigram(vocab_size=4, block_size=4, rng=rng)
@@ -14,16 +17,16 @@ def test_train_returns_loss_per_step():
 
 
 def test_train_drives_loss_down_on_repetitive_data():
+    """Train drives loss down on repetitive data."""
     rng = np.random.default_rng(0)
     data = np.array([0, 1, 2, 3] * 200)  # perfectly predictable cycle
     model = Bigram(vocab_size=4, block_size=4, rng=rng)
-    losses = train(
-        model, data, steps=300, batch_size=16, lr=0.5, optimizer="sgd", rng=rng
-    )
+    losses = train(model, data, steps=300, batch_size=16, lr=0.5, optimizer="sgd", rng=rng)
     assert losses[-1] < losses[0] * 0.5  # loss at least halved
 
 
 def test_train_works_for_single_mode_model():
+    """Train works for single mode model."""
     rng = np.random.default_rng(0)
     data = np.array([0, 1, 2, 3] * 200)
     model = MLP(vocab_size=4, block_size=3, embed_dim=8, hidden_dim=16, rng=rng)
@@ -31,10 +34,11 @@ def test_train_works_for_single_mode_model():
     assert losses[-1] < losses[0]
 
 
-def test_train_log_every_calls_log(capsys):
+def test_train_log_every_calls_log():
+    """Train log every calls log."""
     rng = np.random.default_rng(0)
     data = np.array([0, 1, 2, 3] * 50)
     model = Bigram(vocab_size=4, block_size=4, rng=rng)
-    messages = []
+    messages: list[str] = []
     train(model, data, steps=4, batch_size=8, rng=rng, log_every=2, log=messages.append)
     assert len(messages) == 2  # steps 0 and 2

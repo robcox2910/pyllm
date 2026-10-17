@@ -1,3 +1,5 @@
+"""Tests for mlp."""
+
 import numpy as np
 
 from pyllm.models.mlp import MLP
@@ -5,6 +7,7 @@ from pyllm.nn import cross_entropy
 
 
 def test_mlp_logits_shape_is_one_prediction_per_window():
+    """Mlp logits shape is one prediction per window."""
     model = MLP(
         vocab_size=5,
         block_size=3,
@@ -17,6 +20,7 @@ def test_mlp_logits_shape_is_one_prediction_per_window():
 
 
 def test_mlp_mode_and_metadata():
+    """Mlp mode and metadata."""
     model = MLP(vocab_size=5, block_size=3, rng=np.random.default_rng(0))
     assert model.mode == "single"
     assert model.block_size == 3
@@ -24,6 +28,7 @@ def test_mlp_mode_and_metadata():
 
 
 def test_mlp_config():
+    """Mlp config."""
     cfg = MLP(
         vocab_size=5,
         block_size=3,
@@ -41,6 +46,7 @@ def test_mlp_config():
 
 
 def test_mlp_has_embedding_and_two_linears():
+    """Mlp has embedding and two linears."""
     model = MLP(
         vocab_size=5,
         block_size=3,
@@ -53,6 +59,7 @@ def test_mlp_has_embedding_and_two_linears():
 
 
 def test_mlp_learns_gradients_flow():
+    """Mlp learns gradients flow."""
     model = MLP(
         vocab_size=5,
         block_size=3,

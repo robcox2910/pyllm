@@ -8,19 +8,20 @@ callers filter these through the validity scorer before keeping them.)
 """
 
 import re
+from os import PathLike
 from pathlib import Path
 
 _FENCE = re.compile(r"```pebble\n(.*?)```", re.DOTALL)
 
 
-def harvest_text(markdown):
+def harvest_text(markdown: str) -> list[str]:
     """Return every fenced ```pebble block found in a markdown string."""
     return [match.group(1).rstrip("\n") for match in _FENCE.finditer(markdown)]
 
 
-def harvest_dir(path):
+def harvest_dir(path: str | PathLike[str]) -> list[str]:
     """Return every ```pebble block across all *.md files under `path` (sorted)."""
-    blocks = []
+    blocks: list[str] = []
     for md in sorted(Path(path).rglob("*.md")):
         blocks.extend(harvest_text(md.read_text(encoding="utf-8")))
     return blocks

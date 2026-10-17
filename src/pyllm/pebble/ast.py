@@ -60,7 +60,7 @@ class Call:
     """Calling a function by name with some arguments, like `step(x)`."""
 
     name: str
-    args: list
+    args: list[Expr]
 
 
 type Expr = Num | Bool | Str | Var | Bin | Unary | Call
@@ -101,8 +101,8 @@ class If:
     """Do one thing if a test is true, optionally another thing otherwise."""
 
     cond: Expr
-    body: list
-    orelse: list | None
+    body: list[Stmt]
+    orelse: list[Stmt] | None
 
 
 @dataclass(frozen=True)
@@ -110,7 +110,7 @@ class While:
     """Keep doing something while a test stays true."""
 
     cond: Expr
-    body: list
+    body: list[Stmt]
 
 
 @dataclass(frozen=True)
@@ -119,7 +119,7 @@ class For:
 
     var: str
     count: Expr
-    body: list
+    body: list[Stmt]
 
 
 @dataclass(frozen=True)
@@ -127,8 +127,8 @@ class Func:
     """Define a reusable function: `fn add(a, b) { ... }`."""
 
     name: str
-    params: list
-    body: list
+    params: list[str]
+    body: list[Stmt]
 
 
 type Stmt = Let | Assign | Print | Return | If | While | For | Func
@@ -138,4 +138,4 @@ type Stmt = Let | Assign | Print | Return | If | While | For | Func
 class Program:
     """A whole program: a list of statements, top to bottom."""
 
-    statements: list
+    statements: list[Stmt]

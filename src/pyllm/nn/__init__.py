@@ -1,5 +1,6 @@
-"""Neural-net building blocks — think of this as a box of Lego bricks (layers) you snap
-together to build a brain, all standing on the autograd Tensor (see `pyllm.autograd`).
+"""Neural-net building blocks: a box of Lego bricks (layers) for building a brain.
+
+Every brick stands on the autograd Tensor (see `pyllm.autograd`).
 
 Each class here (Linear, Attention, etc.) is a reusable block that learns patterns.
 The `functional` module gives you the mathematical glue: softmax, cross_entropy, gelu.
@@ -16,18 +17,18 @@ from pyllm.nn.normalization import LayerNorm
 from pyllm.nn.transformer import FeedForward, TransformerBlock
 
 __all__ = [
-    "Module",
-    "Linear",
-    "Embedding",
-    "LayerNorm",
     "Dropout",
-    "Head",
-    "MultiHeadAttention",
+    "Embedding",
     "FeedForward",
+    "Head",
+    "LayerNorm",
+    "Linear",
+    "Module",
+    "MultiHeadAttention",
     "TransformerBlock",
-    "softmax",
-    "cross_entropy",
-    "gelu",
-    "embedding",
     "concat",
+    "cross_entropy",
+    "embedding",
+    "gelu",
+    "softmax",
 ]

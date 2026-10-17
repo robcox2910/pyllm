@@ -1,9 +1,12 @@
+"""Tests for learning."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
 
 
 def test_zero_grad_resets():
+    """Zero grad resets."""
     a = Tensor([1.0, 2.0])
     (a.sum()).backward()
     assert a.grad.tolist() == [1.0, 1.0]
@@ -13,6 +16,7 @@ def test_zero_grad_resets():
 
 def test_linear_regression_converges():
     # Learn y = 2x + 1 from data, using only the autograd engine.
+    """Linear regression converges."""
     rng = np.random.default_rng(0)
     xs = rng.uniform(-1.0, 1.0, size=(20, 1))
     ys = 2.0 * xs + 1.0
@@ -23,7 +27,7 @@ def test_linear_regression_converges():
     target = Tensor(ys)
 
     lr = 0.1
-    losses = []
+    losses: list[float] = []
     for _ in range(200):
         w.zero_grad()
         b.zero_grad()

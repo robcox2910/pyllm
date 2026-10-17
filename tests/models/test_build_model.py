@@ -1,9 +1,12 @@
+"""Tests for build model."""
+
 import numpy as np
 
 from pyllm.models import GPT, build_model
 
 
 def test_build_model_roundtrips_every_kind():
+    """Build model roundtrips every kind."""
     rng = np.random.default_rng(0)
     originals = [
         ("bigram", {"kind": "bigram", "vocab_size": 5, "block_size": 8}),
@@ -35,6 +38,7 @@ def test_build_model_roundtrips_every_kind():
 
 
 def test_build_model_produces_working_gpt():
+    """Build model produces working gpt."""
     cfg = GPT(
         vocab_size=5,
         block_size=8,
@@ -48,7 +52,8 @@ def test_build_model_produces_working_gpt():
 
 
 def test_build_model_rejects_unknown_kind():
+    """Build model rejects unknown kind."""
     import pytest
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="unknown model kind"):
         build_model({"kind": "quantum"})

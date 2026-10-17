@@ -1,9 +1,14 @@
+"""Functional helpers: the maths glue (softmax, cross-entropy, gelu and friends)."""
+
+from collections.abc import Sequence
+
 import numpy as np
+from numpy.typing import ArrayLike
 
 from pyllm.autograd import Tensor
 
 
-def softmax(t, axis=-1):
+def softmax(t: Tensor, axis: int = -1) -> Tensor:
     """Turn a row of scores into a row of probabilities that add up to 1.
 
     Like sharing a cake by how much each person shouted for it: louder scores get
@@ -17,16 +22,16 @@ def softmax(t, axis=-1):
     probs = exp / exp.sum(axis=axis, keepdims=True)
     out = Tensor(probs, (t,), "softmax")
 
-    def _backward():
+    def _backward() -> None:
         weighted = (out.grad * probs).sum(axis=axis, keepdims=True)
         t.grad += probs * (out.grad - weighted)
 
-    out._backward = _backward
+    out.set_backward(_backward)
     return out
 
 
-def embedding(weight, ids):
-    """Look up a row of numbers for each id — a dictionary from id to vector.
+def embedding(weight: Tensor, ids: ArrayLike) -> Tensor:
+    """Look up a row of numbers for each id, like a dictionary from id to vector.
 
     `weight` is a table with one row per possible token. `embedding` just grabs
     the rows named by `ids` (like looking up several words in a picture
@@ -37,16 +42,16 @@ def embedding(weight, ids):
     dim = weight.data.shape[1]
     out = Tensor(weight.data[ids], (weight,), "embedding")
 
-    def _backward():
+    def _backward() -> None:
         grad = np.zeros_like(weight.data)
         np.add.at(grad, ids.reshape(-1), out.grad.reshape(-1, dim))
         weight.grad += grad
 
-    out._backward = _backward
+    out.set_backward(_backward)
     return out
 
 
-def cross_entropy(logits, targets):
+def cross_entropy(logits: Tensor, targets: ArrayLike) -> Tensor:
     """Score how surprised the model was by the right answer (lower = better).
 
     For each example the model gives a score to every possible next token. We
@@ -68,18 +73,18 @@ def cross_entropy(logits, targets):
     loss_value = -np.log(correct).mean()
     out = Tensor(loss_value, (logits,), "cross_entropy")
 
-    def _backward():
+    def _backward() -> None:
         grad = probs.copy()
         grad[np.arange(n), flat_targets] -= 1.0
         grad = grad / n * out.grad
         logits.grad += grad.reshape(logits.data.shape)
 
-    out._backward = _backward
+    out.set_backward(_backward)
     return out
 
 
-def gelu(t):
-    """A soft on/off switch for signals — like a dimmer, not a hard light switch.
+def gelu(t: Tensor) -> Tensor:
+    """Switch signals on softly, like a dimmer rather than a hard light switch.
 
     `relu` slams negatives to exactly zero. `gelu` is gentler: it lets most of a
     positive number through, fades negatives smoothly toward zero, and bends
@@ -92,7 +97,7 @@ def gelu(t):
     return (t * 0.5) * (inner.tanh() + 1.0)
 
 
-def concat(tensors, axis=-1):
+def concat(tensors: Sequence[Tensor], axis: int = -1) -> Tensor:
     """Stick several tables side by side into one wider table.
 
     Multi-head attention gives each "head" its own small report; `concat` lays
@@ -103,12 +108,12 @@ def concat(tensors, axis=-1):
     data = np.concatenate([t.data for t in tensors], axis=axis)
     out = Tensor(data, tuple(tensors), "concat")
 
-    def _backward():
+    def _backward() -> None:
         sizes = [t.data.shape[axis] for t in tensors]
         split_points = np.cumsum(sizes)[:-1]
         pieces = np.split(out.grad, split_points, axis=axis)
         for tensor, piece in zip(tensors, pieces, strict=True):
             tensor.grad += piece
 
-    out._backward = _backward
+    out.set_backward(_backward)
     return out

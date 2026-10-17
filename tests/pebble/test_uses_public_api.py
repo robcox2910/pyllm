@@ -8,6 +8,7 @@ DEEP_IMPORT = re.compile(r"^\s*(from pebble\.|import pebble\.)", re.MULTILINE)
 
 
 def test_pyllm_imports_only_pebbles_public_api():
+    """Pyllm imports only pebbles public api."""
     offenders = [
         str(path.relative_to(SRC))
         for path in sorted(SRC.rglob("*.py"))

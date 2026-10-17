@@ -1,4 +1,10 @@
+"""Optimizers: the rules for stepping downhill (SGD and Adam)."""
+
+from collections.abc import Iterable
+
 import numpy as np
+
+from pyllm.autograd import Tensor
 
 
 class SGD:
@@ -11,16 +17,17 @@ class SGD:
     you crawl.
     """
 
-    def __init__(self, parameters, lr=0.1):
-        self.parameters = list(parameters)
+    def __init__(self, parameters: Iterable[Tensor], lr: float = 0.1) -> None:
+        """Remember which parameters to nudge and how big each step is (`lr`)."""
+        self.parameters: list[Tensor] = list(parameters)
         self.lr = lr
 
-    def step(self):
+    def step(self) -> None:
         """Take one downhill step for every parameter."""
         for p in self.parameters:
             p.data -= self.lr * p.grad
 
-    def zero_grad(self):
+    def zero_grad(self) -> None:
         """Erase the slope readings before measuring the next ones."""
         for p in self.parameters:
             p.grad = np.zeros_like(p.data)
@@ -37,8 +44,15 @@ class Adam:
     uses it. `betas` say how long each memory lasts; `eps` avoids divide-by-zero.
     """
 
-    def __init__(self, parameters, lr=1e-3, betas=(0.9, 0.999), eps=1e-8):
-        self.parameters = list(parameters)
+    def __init__(
+        self,
+        parameters: Iterable[Tensor],
+        lr: float = 1e-3,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+    ) -> None:
+        """Set up the step size and the two memories (`m` and `v`) for each parameter."""
+        self.parameters: list[Tensor] = list(parameters)
         self.lr = lr
         self.beta1, self.beta2 = betas
         self.eps = eps
@@ -46,7 +60,7 @@ class Adam:
         self.v = [np.zeros_like(p.data) for p in self.parameters]
         self.t = 0
 
-    def step(self):
+    def step(self) -> None:
         """Take one adaptive step for every parameter."""
         self.t += 1
         for i, p in enumerate(self.parameters):
@@ -56,7 +70,7 @@ class Adam:
             v_hat = self.v[i] / (1 - self.beta2**self.t)
             p.data -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
-    def zero_grad(self):
+    def zero_grad(self) -> None:
         """Erase the slope readings before measuring the next ones."""
         for p in self.parameters:
             p.grad = np.zeros_like(p.data)

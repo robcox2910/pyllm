@@ -1,3 +1,5 @@
+"""Tests for generate."""
+
 import numpy as np
 import pytest
 
@@ -7,11 +9,13 @@ from pyllm.tokenizer import CharTokenizer
 
 
 def test_greedy_picks_argmax():
+    """Greedy picks argmax."""
     logits = np.array([0.1, 5.0, -2.0, 0.3])
     assert sample_next(logits, temperature=0.0) == 1
 
 
 def test_top_k_1_is_effectively_greedy():
+    """Top k 1 is effectively greedy."""
     logits = np.array([0.1, 5.0, -2.0, 0.3])
     rng = np.random.default_rng(0)
     picks = {sample_next(logits, temperature=1.0, top_k=1, rng=rng) for _ in range(20)}
@@ -20,6 +24,7 @@ def test_top_k_1_is_effectively_greedy():
 
 def test_top_k_zero_keeps_all_tokens():
     # top_k=0 must mean "no shortlist", not "keep zero tokens".
+    """Top k zero keeps all tokens."""
     logits = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     rng = np.random.default_rng(0)
     picks = {sample_next(logits, temperature=1.0, top_k=0, rng=rng) for _ in range(200)}
@@ -29,16 +34,16 @@ def test_top_k_zero_keeps_all_tokens():
 
 
 def test_negative_top_k_keeps_all_tokens():
+    """Negative top k keeps all tokens."""
     logits = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     rng = np.random.default_rng(0)
-    picks = {
-        sample_next(logits, temperature=1.0, top_k=-3, rng=rng) for _ in range(200)
-    }
+    picks = {sample_next(logits, temperature=1.0, top_k=-3, rng=rng) for _ in range(200)}
     assert len(picks) > 1
     assert all(0 <= p < 5 for p in picks)
 
 
 def test_low_temperature_concentrates_on_top_token():
+    """Low temperature concentrates on top token."""
     logits = np.array([0.0, 2.0, 0.0])
     rng = np.random.default_rng(0)
     picks = [sample_next(logits, temperature=0.1, rng=rng) for _ in range(200)]
@@ -46,6 +51,7 @@ def test_low_temperature_concentrates_on_top_token():
 
 
 def test_sampling_stays_in_vocab_range():
+    """Sampling stays in vocab range."""
     logits = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     rng = np.random.default_rng(1)
     for _ in range(50):
@@ -54,6 +60,7 @@ def test_sampling_stays_in_vocab_range():
 
 
 def test_generate_returns_prompt_plus_new_tokens():
+    """Generate returns prompt plus new tokens."""
     text = "abcde"
     tok = CharTokenizer(text)
     model = GPT(
@@ -64,14 +71,13 @@ def test_generate_returns_prompt_plus_new_tokens():
         num_layers=1,
         rng=np.random.default_rng(0),
     )
-    out = generate(
-        model, tok, prompt="a", max_new_tokens=5, rng=np.random.default_rng(0)
-    )
+    out = generate(model, tok, prompt="a", max_new_tokens=5, rng=np.random.default_rng(0))
     assert out.startswith("a")
     assert len(out) == 1 + 5  # prompt char + 5 generated
 
 
 def test_generate_only_emits_known_characters():
+    """Generate only emits known characters."""
     text = "pokemon"
     tok = CharTokenizer(text)
     model = GPT(
@@ -82,14 +88,13 @@ def test_generate_only_emits_known_characters():
         num_layers=1,
         rng=np.random.default_rng(0),
     )
-    out = generate(
-        model, tok, prompt="p", max_new_tokens=20, rng=np.random.default_rng(1)
-    )
+    out = generate(model, tok, prompt="p", max_new_tokens=20, rng=np.random.default_rng(1))
     assert set(out).issubset(set(text))
 
 
 def test_generate_sequence_model_with_empty_prompt():
     # A GPT with an empty prompt must seed itself, not crash on an empty window.
+    """Generate sequence model with empty prompt."""
     text = "pikachu"
     tok = CharTokenizer(text)
     model = GPT(
@@ -100,14 +105,13 @@ def test_generate_sequence_model_with_empty_prompt():
         num_layers=1,
         rng=np.random.default_rng(0),
     )
-    out = generate(
-        model, tok, prompt="", max_new_tokens=6, rng=np.random.default_rng(0)
-    )
+    out = generate(model, tok, prompt="", max_new_tokens=6, rng=np.random.default_rng(0))
     assert len(out) == 6
     assert set(out).issubset(set(text))
 
 
 def test_generate_works_for_single_mode_model_with_short_prompt():
+    """Generate works for single mode model with short prompt."""
     text = "abcdef"
     tok = CharTokenizer(text)
     model = MLP(
@@ -118,30 +122,28 @@ def test_generate_works_for_single_mode_model_with_short_prompt():
         rng=np.random.default_rng(0),
     )
     # empty prompt must still work (left-pad the window)
-    out = generate(
-        model, tok, prompt="", max_new_tokens=4, rng=np.random.default_rng(0)
-    )
+    out = generate(model, tok, prompt="", max_new_tokens=4, rng=np.random.default_rng(0))
     assert len(out) == 4
     assert set(out).issubset(set(text))
 
 
 def test_forbidden_tokens_are_never_chosen():
+    """Forbidden tokens are never chosen."""
     logits = np.array([0.0, 9.0, 0.0, 0.0])
     rng = np.random.default_rng(0)
-    picks = {
-        sample_next(logits, rng=rng, allowed=lambda token: token != 1)
-        for _ in range(200)
-    }
+    picks = {sample_next(logits, rng=rng, allowed=lambda token: token != 1) for _ in range(200)}
     assert 1 not in picks
 
 
 def test_greedy_picks_the_best_allowed_token():
+    """Greedy picks the best allowed token."""
     logits = np.array([0.1, 5.0, -2.0, 3.0])
     pick = sample_next(logits, temperature=0.0, allowed=lambda token: token != 1)
     assert pick == 3
 
 
 def test_top_k_falls_back_when_the_shortlist_is_all_forbidden():
+    """Top k falls back when the shortlist is all forbidden."""
     logits = np.array([0.1, 5.0, -2.0, 3.0])
     rng = np.random.default_rng(0)
     pick = sample_next(logits, top_k=1, rng=rng, allowed=lambda token: token != 1)
@@ -149,21 +151,25 @@ def test_top_k_falls_back_when_the_shortlist_is_all_forbidden():
 
 
 def test_nothing_allowed_is_an_error():
+    """Nothing allowed is an error."""
     with pytest.raises(RuntimeError):
-        sample_next(np.array([1.0, 2.0]), allowed=lambda token: False)
+        sample_next(np.array([1.0, 2.0]), allowed=lambda _token: False)
 
 
 class OnlyAs:
     """A toy referee: text may only contain 'a', and is finished at even lengths."""
 
-    def viable(self, text):
+    def viable(self, text: str) -> bool:
+        """Viable."""
         return set(text) <= {"a"}
 
-    def complete(self, text):
+    def complete(self, text: str) -> bool:
+        """Complete."""
         return self.viable(text) and len(text) % 2 == 0
 
 
-def _tiny_gpt(text="abc"):
+def _tiny_gpt(text: str = "abc") -> tuple[GPT, CharTokenizer]:
+    """Build a tiny GPT and the tokenizer for `text`."""
     tokenizer = CharTokenizer(text)
     model = GPT(
         tokenizer.vocab_size,
@@ -177,6 +183,7 @@ def _tiny_gpt(text="abc"):
 
 
 def test_referee_keeps_generation_legal_and_trims_to_a_finished_point():
+    """Referee keeps generation legal and trims to a finished point."""
     model, tokenizer = _tiny_gpt()
     text = generate(
         model,
@@ -189,22 +196,27 @@ def test_referee_keeps_generation_legal_and_trims_to_a_finished_point():
 
 
 def test_greedy_generation_with_a_referee_stays_legal():
+    """Greedy generation with a referee stays legal."""
     model, tokenizer = _tiny_gpt()
-    text = generate(
-        model, tokenizer, max_new_tokens=5, temperature=0.0, referee=OnlyAs()
-    )
+    text = generate(model, tokenizer, max_new_tokens=5, temperature=0.0, referee=OnlyAs())
     assert text == "aaaa"
 
 
 def test_rule_breaking_prompt_is_rejected():
+    """Rule breaking prompt is rejected."""
     model, tokenizer = _tiny_gpt()
     with pytest.raises(ValueError, match="breaks the rules"):
         generate(model, tokenizer, prompt="b", referee=OnlyAs())
 
 
 def test_unfinished_prompt_with_no_finished_point_returns_nothing():
+    """Unfinished prompt with no finished point returns nothing."""
+
     class NeverDone(OnlyAs):
-        def complete(self, text):
+        """Never done tests."""
+
+        def complete(self, text: str) -> bool:  # noqa: ARG002
+            """Never finish."""
             return False
 
     model, tokenizer = _tiny_gpt()

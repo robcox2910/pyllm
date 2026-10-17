@@ -1,10 +1,16 @@
+"""Tests for pebble corpus."""
+
+from pathlib import Path
+
 import numpy as np
+import pytest
 
 from pyllm.pebble.corpus import build_corpus
 
 
 def test_build_corpus_generates_programs_without_pebble():
     # Generation must NOT require pebble; harvest_paths empty => no pebble needed.
+    """Build corpus generates programs without pebble."""
     text = build_corpus(np.random.default_rng(0), num_generated=5)
     assert isinstance(text, str)
     assert text.count("let ") >= 5  # every program declares variables
@@ -13,13 +19,15 @@ def test_build_corpus_generates_programs_without_pebble():
 
 
 def test_build_corpus_is_deterministic():
+    """Build corpus is deterministic."""
     a = build_corpus(np.random.default_rng(1), num_generated=4)
     b = build_corpus(np.random.default_rng(1), num_generated=4)
     assert a == b
 
 
 def test_public_api_exports():
-    import pyllm.pebble as pebble
+    """Public api exports."""
+    from pyllm import pebble
 
     for name in [
         "random_program",
@@ -35,7 +43,9 @@ def test_public_api_exports():
         assert hasattr(pebble, name), f"pyllm.pebble is missing {name}"
 
 
-def test_canonical_corpus_drops_programs_the_formatter_breaks(tmp_path, monkeypatch):
+def test_canonical_corpus_drops_programs_the_formatter_breaks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     """If tidying ever breaks a program, build_corpus throws that program away.
 
     We don't rely on a real formatter bug (those get fixed upstream); instead
@@ -45,12 +55,12 @@ def test_canonical_corpus_drops_programs_the_formatter_breaks(tmp_path, monkeypa
     import pytest
 
     pytest.importorskip("pebble")
-    import pyllm.pebble.corpus as corpus
-    from pyllm.pebble import build_corpus, is_valid
+    from pyllm.pebble import build_corpus, corpus, is_valid
 
     real_canonicalize = corpus.canonicalize
 
-    def mangle_the_marked_one(source):
+    def mangle_the_marked_one(source: str) -> str:
+        """Mangle the marked one."""
         return "let = oops\n" if "marked" in source else real_canonicalize(source)
 
     (tmp_path / "doc.md").write_text("```pebble\nlet marked = 1\n```\n")
@@ -68,6 +78,7 @@ def test_canonical_corpus_drops_programs_the_formatter_breaks(tmp_path, monkeypa
 
 
 def test_every_bundled_corpus_program_parses():
+    """Every bundled corpus program parses."""
     import pytest
 
     pytest.importorskip("pebble")

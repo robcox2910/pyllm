@@ -1,5 +1,9 @@
+"""Tests for public api."""
+
+
 def test_public_api_exports():
-    import pyllm.nn as nn
+    """Public api exports."""
+    from pyllm import nn
 
     expected = [
         "Module",

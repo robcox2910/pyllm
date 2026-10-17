@@ -1,3 +1,5 @@
+"""LayerNorm: putting every row on the same fair scale."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -14,12 +16,14 @@ class LayerNorm(Module):
     the network stretch and shift the result if it wants.
     """
 
-    def __init__(self, dim, eps=1e-5):
+    def __init__(self, dim: int, eps: float = 1e-5) -> None:
+        """Create the stretch (`gamma`) and shift (`beta`) dials."""
         self.gamma = Tensor(np.ones(dim))
         self.beta = Tensor(np.zeros(dim))
         self.eps = eps
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Re-scale each row to a standard average and spread."""
         mean = x.mean(axis=-1, keepdims=True)
         centered = x - mean
         variance = (centered**2).mean(axis=-1, keepdims=True)

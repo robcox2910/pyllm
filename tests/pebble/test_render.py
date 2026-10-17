@@ -1,3 +1,5 @@
+"""Tests for render."""
+
 from pyllm.pebble.ast import (
     Assign,
     Bin,
@@ -19,21 +21,25 @@ from pyllm.pebble.render import render
 
 
 def test_render_let_and_binop():
+    """Render let and binop."""
     prog = Program([Let("x", Bin("+", Num(1), Num(2)))])
     assert render(prog) == "let x = (1 + 2)\n"
 
 
 def test_render_reassignment_and_print():
+    """Render reassignment and print."""
     prog = Program([Assign("x", Num(5)), Print(Var("x"))])
     assert render(prog) == "x = 5\nprint(x)\n"
 
 
 def test_render_bool_and_unary():
+    """Render bool and unary."""
     prog = Program([Let("b", Unary("not", Bool(True)))])
     assert render(prog) == "let b = (not true)\n"
 
 
 def test_render_if_else_block_is_brace_delimited():
+    """Render if else block is brace delimited."""
     prog = Program(
         [
             If(Bin(">", Var("x"), Num(0)), [Print(Var("x"))], [Print(Num(0))]),
@@ -43,6 +49,7 @@ def test_render_if_else_block_is_brace_delimited():
 
 
 def test_render_while_and_for_and_call():
+    """Render while and for and call."""
     prog = Program(
         [
             While(Bool(True), [Assign("x", Call("step", [Var("x")]))]),
@@ -55,5 +62,6 @@ def test_render_while_and_for_and_call():
 
 
 def test_render_function_def_and_return():
+    """Render function def and return."""
     prog = Program([Func("add", ["a", "b"], [Return(Bin("+", Var("a"), Var("b")))])])
     assert render(prog) == ("fn add(a, b) {\n    return (a + b)\n}\n")

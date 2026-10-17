@@ -1,3 +1,5 @@
+"""Tests for overfit."""
+
 import numpy as np
 
 from pyllm.models import GPT
@@ -7,6 +9,7 @@ from pyllm.training import train
 
 def test_gpt_can_overfit_a_tiny_corpus():
     # A GPT with enough steps must drive the loss near zero on a tiny, fixed text.
+    """Gpt can overfit a tiny corpus."""
     text = "pikachu bulbasaur charmander squirtle"
     tok = CharTokenizer(text)
     data = np.array(tok.encode(text))

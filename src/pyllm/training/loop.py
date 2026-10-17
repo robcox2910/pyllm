@@ -1,19 +1,27 @@
+"""The training loop: show batches over and over and nudge the weights."""
+
+from collections.abc import Callable
+
+import numpy as np
+from numpy.typing import ArrayLike
+
+from pyllm.models import LanguageModel
 from pyllm.nn import cross_entropy
 from pyllm.training.data import get_batch
 from pyllm.training.optim import SGD, Adam
 
 
 def train(
-    model,
-    data,
-    steps=1000,
-    batch_size=32,
-    lr=1e-3,
-    optimizer="adam",
-    rng=None,
-    log_every=0,
-    log=print,
-):
+    model: LanguageModel,
+    data: ArrayLike,
+    steps: int = 1000,
+    batch_size: int = 32,
+    lr: float = 1e-3,
+    optimizer: str = "adam",
+    rng: np.random.Generator | None = None,
+    log_every: int = 0,
+    log: Callable[[str], None] = print,
+) -> list[float]:
     """Teach a model by showing it batches over and over and nudging its weights.
 
     This is the whole heartbeat of learning, repeated `steps` times:
@@ -27,8 +35,8 @@ def train(
     """
     model.train()
     params = model.parameters()
-    opt = Adam(params, lr=lr) if optimizer == "adam" else SGD(params, lr=lr)
-    losses = []
+    opt: Adam | SGD = Adam(params, lr=lr) if optimizer == "adam" else SGD(params, lr=lr)
+    losses: list[float] = []
     for step in range(steps):
         x, y = get_batch(data, model.block_size, batch_size, mode=model.mode, rng=rng)
         logits = model(x)

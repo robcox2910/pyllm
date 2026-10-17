@@ -7,7 +7,7 @@ POKEMON_CHECKPOINT = CORPUS_DIR / "pokemon.npz"
 PEBBLE_CHECKPOINT = CORPUS_DIR / "pebble.npz"
 
 
-def load_corpus(name="pokemon"):
+def load_corpus(name: str = "pokemon") -> str:
     """Read one of the bundled text corpora and hand back its text.
 
     A corpus is just a big text file we train on. The Pokémon one is a list of

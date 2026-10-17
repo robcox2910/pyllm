@@ -16,7 +16,9 @@ Programs are separated by a blank line, just like in the training corpus. Every
 earlier program must be complete; only the last one may still be in progress.
 """
 
+from collections.abc import Sequence
 from functools import lru_cache
+from typing import Literal
 
 _INDENT = "    "
 # Every word Pebble reserves (so it can never be a name), plus `print` and
@@ -68,11 +70,11 @@ _STRING_BANNED = '"\\\n{}'
 _COMPARE_OPS = (" == ", " != ", " < ", " <= ", " > ", " >= ")
 
 
-class _NeedMore(Exception):
+class _NeedMoreError(Exception):
     """The text stopped mid-move: not wrong yet, just unfinished."""
 
 
-class _Foul(Exception):
+class _FoulError(Exception):
     """The text broke a rule: no amount of extra typing can fix it."""
 
 
@@ -80,31 +82,32 @@ class _Parser:
     """A recursive-descent parser that reads characters left to right.
 
     Each `_parse_*` method reads one grammar shape. Running out of text raises
-    `_NeedMore`; reading something the rules forbid raises `_Foul`.
+    `_NeedMoreError`; reading something the rules forbid raises `_FoulError`.
     """
 
-    def __init__(self, text):
+    def __init__(self, text: str) -> None:
+        """Start reading `text` from the first character."""
         self.text = text
         self.pos = 0
 
     # -- reading helpers -------------------------------------------------------
 
-    def _at_end(self):
+    def _at_end(self) -> bool:
         return self.pos >= len(self.text)
 
-    def _peek(self):
+    def _peek(self) -> str:
         if self._at_end():
-            raise _NeedMore
+            raise _NeedMoreError
         return self.text[self.pos]
 
-    def _expect(self, literal):
+    def _expect(self, literal: str) -> None:
         """Read exactly `literal`, letter by letter."""
         for char in literal:
             if self._peek() != char:
-                raise _Foul
+                raise _FoulError
             self.pos += 1
 
-    def _choose(self, options):
+    def _choose(self, options: Sequence[str]) -> str | None:
         """Read whichever option comes next; None if none of them do.
 
         If the text ends part-way through an option ("a" of " and "), we can't
@@ -118,31 +121,31 @@ class _Parser:
                 self.pos += len(option)
                 return option
         if any(option.startswith(rest) for option in options):
-            raise _NeedMore
+            raise _NeedMoreError
         return None
 
-    def _word(self):
+    def _word(self) -> tuple[str, bool]:
         """Read a run of name letters. Returns (word, touched_the_end)."""
         start = self.pos
         while not self._at_end() and self.text[self.pos] in _NAME_CHARS:
             self.pos += 1
         return self.text[start : self.pos], self._at_end()
 
-    def _name(self):
+    def _name(self) -> str:
         """Read a new name (for let/for/fn/params): not a keyword, not empty."""
         if self._peek() not in _NAME_START:
-            raise _Foul
+            raise _FoulError
         word, at_end = self._word()
         if at_end:
-            raise _NeedMore  # "le" might grow into "level"
+            raise _NeedMoreError  # "le" might grow into "level"
         if word in _KEYWORDS:
-            raise _Foul
+            raise _FoulError
         return word
 
     # -- programs and blocks ---------------------------------------------------
 
-    def parse_program(self):
-        """A program: statements on their own lines, nothing indented."""
+    def parse_program(self) -> None:
+        """Read a program: statements on their own lines, nothing indented."""
         self._parse_statement(depth=0, in_fn=False)
         while not self._at_end():
             self._expect("\n")
@@ -150,7 +153,7 @@ class _Parser:
                 return  # one trailing newline is fine
             self._parse_statement(depth=0, in_fn=False)
 
-    def _parse_block(self, depth, in_fn):
+    def _parse_block(self, depth: int, in_fn: bool) -> None:
         """`{` already read: one or more indented statements, then `}`."""
         inner = _INDENT * (depth + 1)
         self._expect("\n" + inner)
@@ -160,99 +163,127 @@ class _Parser:
             self._peek()  # the block can't simply stop: it needs a `}`
             step = self._choose([inner, _INDENT * depth + "}"])
             if step is None:
-                raise _Foul
+                raise _FoulError
             if step != inner:
                 return
             self._parse_statement(depth + 1, in_fn)
 
     # -- statements ------------------------------------------------------------
 
-    def _parse_statement(self, depth, in_fn):
+    def _parse_statement(self, depth: int, in_fn: bool) -> None:
         char = self._peek()
         if char == "#":
             self._parse_comment()
             return
         if char not in _NAME_START:
-            raise _Foul
+            raise _FoulError
         word, at_end = self._word()
         if at_end:
-            raise _NeedMore  # a half-typed keyword or name
+            raise _NeedMoreError  # a half-typed keyword or name
         match word:
             case "let":
-                self._expect(" ")
-                self._name()
-                self._expect(" = ")
-                self._parse_expr()
+                self._stmt_let()
             case "print":
-                self._expect("(")
-                self._parse_expr()
-                self._expect(")")
+                self._stmt_print()
             case "return":
-                if not in_fn:
-                    raise _Foul  # you can only hand back a value from a function
-                if self._choose([" "]):
-                    self._parse_expr()
+                self._stmt_return(in_fn)
             case "if":
-                self._expect(" ")
-                self._parse_expr()
-                self._expect(" {")
-                self._parse_block(depth, in_fn)
-                while branch := self._choose([" else {", " else if "]):
-                    if branch == " else {":
-                        self._parse_block(depth, in_fn)
-                        break
-                    self._parse_expr()  # `else if`: another test, another block
-                    self._expect(" {")
-                    self._parse_block(depth, in_fn)
+                self._stmt_if(depth, in_fn)
             case "while":
-                self._expect(" ")
-                self._parse_expr()
-                self._expect(" {")
-                self._parse_block(depth, in_fn)
+                self._stmt_while(depth, in_fn)
             case "for":
-                self._expect(" ")
-                self._name()
-                self._expect(" in range(")
-                self._parse_expr()
-                self._expect(") {")
-                self._parse_block(depth, in_fn)
+                self._stmt_for(depth, in_fn)
             case "fn":
-                if depth > 0:
-                    raise _Foul  # functions live at the top of the program
-                self._expect(" ")
-                self._name()
-                self._expect("(")
-                if self._choose([")"]) is None:
-                    self._name()
-                    while self._choose([", "]):
-                        self._name()
-                    self._expect(")")
-                self._expect(" {")
-                self._parse_block(depth, in_fn=True)
+                self._stmt_fn(depth)
             case _ if word in _KEYWORDS:
-                raise _Foul
+                raise _FoulError
             case _:
                 self._expect(" = ")
                 self._parse_expr()
 
-    def _parse_comment(self):
+    def _stmt_let(self) -> None:
+        """Read `let name = value`."""
+        self._expect(" ")
+        self._name()
+        self._expect(" = ")
+        self._parse_expr()
+
+    def _stmt_print(self) -> None:
+        """Read `print(value)`."""
+        self._expect("(")
+        self._parse_expr()
+        self._expect(")")
+
+    def _stmt_return(self, in_fn: bool) -> None:
+        """Read `return` with an optional value (only legal inside a function)."""
+        if not in_fn:
+            raise _FoulError  # you can only hand back a value from a function
+        if self._choose([" "]):
+            self._parse_expr()
+
+    def _stmt_if(self, depth: int, in_fn: bool) -> None:
+        """Read `if test { ... }` with any `else if` and `else` branches."""
+        self._expect(" ")
+        self._parse_expr()
+        self._expect(" {")
+        self._parse_block(depth, in_fn)
+        while branch := self._choose([" else {", " else if "]):
+            if branch == " else {":
+                self._parse_block(depth, in_fn)
+                break
+            self._parse_expr()  # `else if`: another test, another block
+            self._expect(" {")
+            self._parse_block(depth, in_fn)
+
+    def _stmt_while(self, depth: int, in_fn: bool) -> None:
+        """Read `while test { ... }`."""
+        self._expect(" ")
+        self._parse_expr()
+        self._expect(" {")
+        self._parse_block(depth, in_fn)
+
+    def _stmt_for(self, depth: int, in_fn: bool) -> None:
+        """Read `for name in range(count) { ... }`."""
+        self._expect(" ")
+        self._name()
+        self._expect(" in range(")
+        self._parse_expr()
+        self._expect(") {")
+        self._parse_block(depth, in_fn)
+
+    def _stmt_fn(self, depth: int) -> None:
+        """Read `fn name(params) { ... }` (only at the top of the program)."""
+        if depth > 0:
+            raise _FoulError  # functions live at the top of the program
+        self._expect(" ")
+        self._name()
+        self._expect("(")
+        if self._choose([")"]) is None:
+            self._name()
+            while self._choose([", "]):
+                self._name()
+            self._expect(")")
+        self._expect(" {")
+        self._parse_block(depth, in_fn=True)
+
+    def _parse_comment(self) -> None:
         """`#` and then anything up to the end of the line."""
         while not self._at_end() and self.text[self.pos] != "\n":
             self.pos += 1
 
     # -- expressions, loosest-binding first ------------------------------------
 
-    def _parse_expr(self):
+    def _parse_expr(self) -> None:
         self._parse_and()
         while self._choose([" or "]):
             self._parse_and()
 
-    def _parse_and(self):
+    def _parse_and(self) -> None:
         self._parse_not()
         while self._choose([" and "]):
             self._parse_not()
 
-    def _parse_not(self):
+    def _parse_not(self) -> None:
         # Only a full "not " counts: "no" might just be the start of a name.
         if self.text.startswith("not ", self.pos):
             self.pos += len("not ")
@@ -260,37 +291,41 @@ class _Parser:
         else:
             self._parse_compare()
 
-    def _parse_compare(self):
+    def _parse_compare(self) -> None:
         self._parse_sum()
         if self._choose(_COMPARE_OPS):
             self._parse_sum()  # just one comparison: no `a < b < c`
 
-    def _parse_sum(self):
+    def _parse_sum(self) -> None:
         self._parse_term()
         while self._choose([" + ", " - "]):
             self._parse_term()
 
-    def _parse_term(self):
+    def _parse_term(self) -> None:
         self._parse_unary()
         while self._choose([" * ", " / ", " % "]):
             self._parse_unary()
 
-    def _parse_unary(self):
+    def _parse_unary(self) -> None:
         self._choose(["-"])  # an optional minus sign in front
         self._parse_primary()
 
-    def _parse_primary(self):
+    def _parse_string(self) -> None:
+        """Read a double-quoted string that avoids the banned characters."""
+        self.pos += 1
+        while self._peek() != '"':
+            if self._peek() in _STRING_BANNED:
+                raise _FoulError
+            self.pos += 1
+        self.pos += 1
+
+    def _parse_primary(self) -> None:
         char = self._peek()
         if char in _DIGITS:
             while not self._at_end() and self.text[self.pos] in _DIGITS:
                 self.pos += 1
         elif char == '"':
-            self.pos += 1
-            while self._peek() != '"':
-                if self._peek() in _STRING_BANNED:
-                    raise _Foul
-                self.pos += 1
-            self.pos += 1
+            self._parse_string()
         elif char == "(":
             self.pos += 1
             self._parse_expr()
@@ -301,8 +336,8 @@ class _Parser:
                 return
             if word in _KEYWORDS:
                 if at_end:
-                    raise _NeedMore  # "not" might grow into "nothing"
-                raise _Foul
+                    raise _NeedMoreError  # "not" might grow into "nothing"
+                raise _FoulError
             # A call: `name(` then either `)` straight away or some arguments.
             if self._choose(["("]) and self._choose([")"]) is None:
                 self._parse_expr()
@@ -310,33 +345,34 @@ class _Parser:
                     self._parse_expr()
                 self._expect(")")
         else:
-            raise _Foul
+            raise _FoulError
 
 
-def _judge(program):
+def _judge(program: str) -> Literal["complete", "unfinished", "foul"]:
     """'complete', 'unfinished' or 'foul' for a single program's text."""
     try:
         _Parser(program).parse_program()
-    except _NeedMore:
+    except _NeedMoreError:
         return "unfinished"
-    except _Foul:
+    except _FoulError:
         return "foul"
     return "complete"
 
 
 @lru_cache(maxsize=4096)
-def _program_complete(program):
+def _program_complete(program: str) -> bool:
+    """Say whether one program is finished (cached, since programs repeat)."""
     return _judge(program) == "complete"
 
 
-def viable(text):
-    """True if `text` could still grow into valid Pebble (no whistle yet)."""
+def viable(text: str) -> bool:
+    """Say whether `text` could still grow into valid Pebble (no whistle yet)."""
     *finished, current = text.split("\n\n")
     if not all(_program_complete(p) for p in finished):
         return False
     return _judge(current) != "foul"
 
 
-def complete(text):
-    """True if `text` is finished, valid Pebble right now (full time)."""
+def complete(text: str) -> bool:
+    """Say whether `text` is finished, valid Pebble right now (full time)."""
     return all(_program_complete(p) for p in text.split("\n\n"))

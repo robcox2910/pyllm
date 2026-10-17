@@ -1,12 +1,16 @@
+"""Checkpoints: freezing a trained model to a file and waking it up again."""
+
 import json
+from os import PathLike
+from typing import Any
 
 import numpy as np
 
-from pyllm.models import build_model
-from pyllm.tokenizer import CharTokenizer
+from pyllm.models import LanguageModel, build_model
+from pyllm.tokenizer import CharTokenizer, Tokenizer
 
 
-def save(path, model, tokenizer):
+def save(path: str | PathLike[str], model: LanguageModel, tokenizer: Tokenizer) -> None:
     """Freeze a trained model to a file so it can wake up exactly as it was.
 
     A checkpoint is like a photograph of the model's brain. We store three
@@ -15,13 +19,15 @@ def save(path, model, tokenizer):
     the same numbers next time. Later `load` uses the recipe to build an empty
     model and pours the saved numbers back in.
     """
-    arrays = {f"param_{i}": p.data for i, p in enumerate(model.parameters())}
+    arrays: dict[str, Any] = {f"param_{i}": p.data for i, p in enumerate(model.parameters())}
     arrays["config"] = np.array(json.dumps(model.config()))
     arrays["vocab"] = np.array(json.dumps(list(tokenizer.stoi)))
     np.savez(path, **arrays)
 
 
-def load(path, rng=None):
+def load(
+    path: str | PathLike[str], rng: np.random.Generator | None = None
+) -> tuple[LanguageModel, CharTokenizer]:
     """Wake a saved model back up: rebuild its shape, pour its numbers back in.
 
     The reverse of `save`. We read the recipe card, build a fresh empty model of

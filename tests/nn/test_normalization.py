@@ -1,3 +1,5 @@
+"""Tests for normalization."""
+
 import numpy as np
 
 from pyllm.autograd import Tensor
@@ -6,6 +8,7 @@ from pyllm.nn.normalization import LayerNorm
 
 
 def test_layernorm_outputs_zero_mean_unit_var():
+    """Layernorm outputs zero mean unit var."""
     ln = LayerNorm(4)
     x = Tensor([[1.0, 2.0, 3.0, 10.0]])
     out = ln(x).data
@@ -14,14 +17,17 @@ def test_layernorm_outputs_zero_mean_unit_var():
 
 
 def test_layernorm_has_two_parameters():
+    """Layernorm has two parameters."""
     assert len(LayerNorm(4).parameters()) == 2
 
 
 def test_layernorm_gradients_check():
+    """Layernorm gradients check."""
     ln = LayerNorm(3)
     x = Tensor([[1.0, -2.0, 0.5], [3.0, 0.0, 1.0]])
 
     def make_output():
+        """Make output."""
         return ln(x).sum()
 
     out = make_output()
