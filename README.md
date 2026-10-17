@@ -134,9 +134,11 @@ Pebble change, install your local checkout over the pinned one:
 
 ```bash
 uv pip install -e ../pebble-lang
+uv run --no-sync pytest
 ```
 
-The next `uv sync` puts the pinned release back.
+Use `uv run --no-sync` while you do this: a plain `uv run` (like `uv sync`)
+puts the pinned release back, which is how you undo the override.
 
 ## Releasing
 
