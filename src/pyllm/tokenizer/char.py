@@ -1,3 +1,8 @@
+"""CharTokenizer: one number per character."""
+
+from collections.abc import Iterable
+
+
 class CharTokenizer:
     """The simplest possible tokenizer: one number per character.
 
@@ -8,20 +13,21 @@ class CharTokenizer:
     one letter at a time -- which is why we also build a smarter BPE tokenizer later.
     """
 
-    def __init__(self, text):
+    def __init__(self, text: str) -> None:
+        """Give every distinct character in `text` its own locker number."""
         chars = sorted(set(text))
-        self.stoi = {char: index for index, char in enumerate(chars)}
-        self.itos = {index: char for char, index in self.stoi.items()}
+        self.stoi: dict[str, int] = {char: index for index, char in enumerate(chars)}
+        self.itos: dict[int, str] = {index: char for char, index in self.stoi.items()}
 
     @property
-    def vocab_size(self):
+    def vocab_size(self) -> int:
         """How many different lockers (characters) we know about."""
         return len(self.stoi)
 
-    def encode(self, text):
+    def encode(self, text: str) -> list[int]:
         """Turn text into a list of locker numbers, one per character."""
         return [self.stoi[char] for char in text]
 
-    def decode(self, ids):
+    def decode(self, ids: Iterable[int]) -> str:
         """Read the letters back out from a list of locker numbers."""
         return "".join(self.itos[index] for index in ids)
