@@ -1,3 +1,8 @@
+---
+title: "Build your own GPT from scratch in Python"
+description: "A small GPT-style language model built from scratch in Python and NumPy: autograd, attention, a Transformer, a tokenizer, training and sampling."
+---
+
 # PyLLM
 
 An educational large language model built from scratch in Python.

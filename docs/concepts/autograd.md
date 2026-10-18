@@ -1,3 +1,8 @@
+---
+title: "How autograd and backpropagation work"
+description: "How a neural network learns by following its steps backwards to find each weight's gradient, explained simply with an autograd engine in Python."
+---
+
 # The Breadcrumb Trail (Autograd)
 
 > **Analogy:** Imagine walking through a forest and dropping a breadcrumb at

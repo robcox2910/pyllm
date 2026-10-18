@@ -1,3 +1,8 @@
+---
+title: "What is a token? How language models read text"
+description: "How a language model chops text into tokens, from single characters to byte-pair encoding, explained simply with working Python code."
+---
+
 # What Is a Token? (Chopping Text into Lego Bricks)
 
 > **Analogy:** A model can't read letters the way you do. First we chop text into

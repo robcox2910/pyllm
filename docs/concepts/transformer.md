@@ -1,3 +1,8 @@
+---
+title: "How a transformer is built, piece by piece"
+description: "How a transformer stacks embeddings, attention, feed-forward layers, residual connections and layer norm, with a working GPT in Python."
+---
+
 # How a Transformer is built (stacking the pieces)
 
 A **Transformer** is the engine inside modern language models — including ours.
