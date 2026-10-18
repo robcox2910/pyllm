@@ -68,6 +68,11 @@ _NAME_CHARS = _NAME_START + "0123456789"
 _DIGITS = "0123456789"
 _STRING_BANNED = '"\\\n{}'
 _COMPARE_OPS = (" == ", " != ", " < ", " <= ", " > ", " >= ")
+# How many brackets, calls, `not`s and blocks may be open at once. The parser
+# calls itself once per level, so without a limit very deep nesting runs out of
+# Python's stack (a RecursionError) instead of getting the whistle. Real code
+# never comes close; a model stuck typing "(((((" does.
+_MAX_NESTING = 50
 
 
 class _NeedMoreError(Exception):
@@ -89,6 +94,19 @@ class _Parser:
         """Start reading `text` from the first character."""
         self.text = text
         self.pos = 0
+        self.nesting = 0
+
+    # -- nesting ---------------------------------------------------------------
+
+    def _open(self) -> None:
+        """Step one level deeper (a bracket, call, `not` or block); too deep is a foul."""
+        self.nesting += 1
+        if self.nesting > _MAX_NESTING:
+            raise _FoulError
+
+    def _close(self) -> None:
+        """Step back out of one level."""
+        self.nesting -= 1
 
     # -- reading helpers -------------------------------------------------------
 
@@ -156,6 +174,7 @@ class _Parser:
     def _parse_block(self, depth: int, in_fn: bool) -> None:
         """`{` already read: one or more indented statements, then `}`."""
         inner = _INDENT * (depth + 1)
+        self._open()
         self._expect("\n" + inner)
         self._parse_statement(depth + 1, in_fn)
         while True:
@@ -165,6 +184,7 @@ class _Parser:
             if step is None:
                 raise _FoulError
             if step != inner:
+                self._close()
                 return
             self._parse_statement(depth + 1, in_fn)
 
@@ -274,9 +294,11 @@ class _Parser:
     # -- expressions, loosest-binding first ------------------------------------
 
     def _parse_expr(self) -> None:
+        self._open()
         self._parse_and()
         while self._choose([" or "]):
             self._parse_and()
+        self._close()
 
     def _parse_and(self) -> None:
         self._parse_not()
@@ -287,7 +309,9 @@ class _Parser:
         # Only a full "not " counts: "no" might just be the start of a name.
         if self.text.startswith("not ", self.pos):
             self.pos += len("not ")
+            self._open()
             self._parse_not()
+            self._close()
         else:
             self._parse_compare()
 
