@@ -46,7 +46,10 @@ class Tensor:
         self.data = np.array(data, dtype=np.float64)
         self.grad = np.zeros_like(self.data)
         self._backward: Callable[[], None] = lambda: None
-        self._prev: set[Tensor] = set(_children)
+        # An ordered tuple, not a set: a set of tensors is ordered by memory
+        # address, which changes run to run, and backward() would then add up
+        # gradients in a different order and drift despite a fixed seed.
+        self._prev: tuple[Tensor, ...] = tuple(dict.fromkeys(_children))
         self._op = _op
 
     @property
