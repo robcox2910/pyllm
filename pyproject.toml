@@ -43,7 +43,7 @@ docs = ["mkdocs-material>=9.5"]
 pebble = ["pebble-lang"]
 
 [tool.uv.sources]
-pebble-lang = { git = "https://github.com/robcox2910/pebble-lang", tag = "v0.2.0" }
+pebble-lang = { git = "https://github.com/robcox2910/pebble-lang", tag = "v0.2.1" }
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
