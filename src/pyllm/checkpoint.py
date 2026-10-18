@@ -1,13 +1,17 @@
 """Checkpoints: freezing a trained model to a file and waking it up again."""
 
 import json
+from collections.abc import Callable
 from os import PathLike
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from pyllm.models import LanguageModel, build_model
 from pyllm.tokenizer import BPETokenizer, CharTokenizer, Tokenizer
+
+_PAIR = 2
+"""A BPE merge glues exactly two pieces together."""
 
 
 def save(path: str | PathLike[str], model: LanguageModel, tokenizer: Tokenizer) -> None:
@@ -66,12 +70,56 @@ def load(
     model = build_model(config, rng=rng)
     for i, p in enumerate(model.parameters()):
         p.data = data[f"param_{i}"]
-    card = json.loads(str(data["tokenizer"])) if "tokenizer" in data else {"kind": "char"}
-    if card["kind"] == "bpe":
-        merges = [(left, right) for left, right in card["merges"]]
-        return model, BPETokenizer.from_merges(card["base_chars"], merges)
-    if card["kind"] == "char":
-        vocab = json.loads(str(data["vocab"]))
-        return model, CharTokenizer("".join(vocab))
-    msg = f"unknown tokenizer kind in checkpoint: {card['kind']!r}"
-    raise ValueError(msg)
+    card: object = json.loads(str(data["tokenizer"])) if "tokenizer" in data else {"kind": "char"}
+    vocab: list[str] = json.loads(str(data["vocab"]))
+    tokenizer = _rebuild_tokenizer(card, vocab)
+    if list(tokenizer.stoi) != vocab or tokenizer.vocab_size != config["vocab_size"]:
+        msg = (
+            f"tokenizer in checkpoint does not fit: it rebuilds {tokenizer.vocab_size} tokens, "
+            f"the saved vocab lists {len(vocab)} and the model's vocab_size is "
+            f"{config['vocab_size']}"
+        )
+        raise ValueError(msg)
+    return model, tokenizer
+
+
+def _rebuild_tokenizer(card: object, vocab: list[str]) -> Tokenizer:
+    """Rebuild the tokenizer a checkpoint's card describes, refusing a damaged card."""
+    if not isinstance(card, dict):
+        msg = f"tokenizer card in checkpoint must be a dict, not {type(card).__name__}"
+        raise ValueError(msg)  # noqa: TRY004 -- a bad file is a bad value, not a bad argument type
+    fields = cast("dict[str, object]", card)
+    kind = fields.get("kind")
+    if kind == "char":
+        return CharTokenizer("".join(vocab))
+    if kind != "bpe":
+        msg = f"unknown tokenizer kind in checkpoint: {kind!r}"
+        raise ValueError(msg)
+    base_chars = fields.get("base_chars")
+    merges = fields.get("merges")
+    if not _is_list_of(base_chars, _is_text):
+        msg = "BPE tokenizer card in checkpoint needs base_chars: a list of strings"
+        raise ValueError(msg)
+    if not _is_list_of(merges, _is_pair_of_text):
+        msg = "BPE tokenizer card in checkpoint needs merges: a list of [left, right] strings"
+        raise ValueError(msg)
+    pairs = [(str(left), str(right)) for left, right in cast("list[list[str]]", merges)]
+    return BPETokenizer.from_merges(cast("list[str]", base_chars), pairs)
+
+
+def _is_text(item: object) -> bool:
+    """Say whether `item` is a string."""
+    return isinstance(item, str)
+
+
+def _is_pair_of_text(item: object) -> bool:
+    """Say whether `item` is a two-item list of strings, like ["a", "b"]."""
+    if not isinstance(item, list):
+        return False
+    pair = cast("list[object]", item)
+    return len(pair) == _PAIR and all(isinstance(piece, str) for piece in pair)
+
+
+def _is_list_of(value: object, check: Callable[[object], bool]) -> bool:
+    """Say whether `value` is a list whose every item passes `check`."""
+    return isinstance(value, list) and all(check(item) for item in cast("list[object]", value))

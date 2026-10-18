@@ -1,7 +1,7 @@
 """Tests for checkpoint."""
 
 import json
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
@@ -196,3 +196,52 @@ def test_old_gpt_checkpoint_without_dropout_loads_with_dropout_off(tmp_path: Pat
     reloaded, _ = load(path)
     assert isinstance(reloaded, GPT)
     assert reloaded.dropout == 0.0
+
+
+def _saved_bpe(tmp_path: Path) -> tuple[Path, dict[str, Any]]:
+    """Save a small BPE checkpoint and return its path plus its tokenizer card."""
+    tok = BPETokenizer()
+    tok.train("abababcabcabc", num_merges=3)
+    path = tmp_path / "bpe.npz"
+    save(path, _tiny_gpt(tok.vocab_size), tok)
+    card: dict[str, Any] = json.loads(str(np.load(path)["tokenizer"]))
+    return path, card
+
+
+def _rewrite_tokenizer_card(path: Path, card: object) -> None:
+    """Replace the tokenizer card stored in a checkpoint, as a damaged file might."""
+    arrays = dict(np.load(path, allow_pickle=False))
+    arrays["tokenizer"] = np.array(json.dumps(card))
+    np.savez(path, **arrays)
+
+
+DAMAGES: dict[str, Callable[[dict[str, Any]], object]] = {
+    "list-instead-of-dict": lambda card: [card],
+    "no-merges": lambda card: {"kind": "bpe", "base_chars": card["base_chars"]},
+    "no-base-chars": lambda card: {"kind": "bpe", "merges": card["merges"]},
+    "merge-of-numbers": lambda card: {**card, "merges": [[1, 2]]},
+    "three-item-merge": lambda card: {**card, "merges": [["a", "b", "c"]]},
+    "merges-not-a-list": lambda card: {**card, "merges": "ab"},
+    "dropped-merge": lambda card: {**card, "merges": card["merges"][:-1]},
+    "short-base": lambda card: {**card, "base_chars": card["base_chars"][:-1]},
+    "char-for-bpe-vocab": lambda _card: {"kind": "char"},
+}
+"""Ways a BPE checkpoint's tokenizer card can be damaged, each by name."""
+
+
+@pytest.mark.parametrize("damage", list(DAMAGES))
+def test_load_refuses_a_damaged_tokenizer_card(tmp_path: Path, damage: str):
+    """A damaged tokenizer card fails with a clear ValueError, not a KeyError or TypeError."""
+    path, card = _saved_bpe(tmp_path)
+    _rewrite_tokenizer_card(path, DAMAGES[damage](card))
+    with pytest.raises(ValueError, match="tokenizer"):
+        load(path)
+
+
+def test_load_refuses_a_char_vocab_that_does_not_fit_the_model(tmp_path: Path):
+    """A character checkpoint whose alphabet doesn't match the model's vocab_size is refused."""
+    tok = CharTokenizer("pikachu")
+    path = tmp_path / "m.npz"
+    save(path, _tiny_gpt(tok.vocab_size + 1), tok)
+    with pytest.raises(ValueError, match="vocab_size"):
+        load(path)
