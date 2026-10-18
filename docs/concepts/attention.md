@@ -1,3 +1,8 @@
+---
+title: "How attention works in a transformer"
+description: "How attention lets each word look back at earlier words using queries, keys and values, explained simply with a working GPT in Python."
+---
+
 # Attention (Re-reading a Sentence to Understand It)
 
 > **Analogy:** When you read "The trophy didn't fit in the case because *it* was
