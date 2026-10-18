@@ -157,3 +157,42 @@ def test_load_refuses_an_unknown_tokenizer_kind(tmp_path: Path):
     np.savez(path, **arrays)
     with pytest.raises(ValueError, match="wordpiece"):
         load(path)
+
+
+DROPOUT = 0.25
+
+
+def test_gpt_dropout_survives_a_round_trip(tmp_path: Path):
+    """A GPT saved with dropout switched on loads back with the same dropout."""
+    tok = CharTokenizer("pikachu")
+    model = GPT(
+        vocab_size=tok.vocab_size,
+        block_size=8,
+        embed_dim=8,
+        num_heads=2,
+        num_layers=1,
+        dropout=DROPOUT,
+        rng=np.random.default_rng(0),
+    )
+    path = tmp_path / "m.npz"
+    save(path, model, tok)
+    reloaded, _ = load(path)
+    assert isinstance(reloaded, GPT)
+    assert reloaded.dropout == DROPOUT
+    assert reloaded.blocks[0].drop1.p == DROPOUT
+
+
+def test_old_gpt_checkpoint_without_dropout_loads_with_dropout_off(tmp_path: Path):
+    """A GPT checkpoint written before dropout was saved loads with dropout off."""
+    tok = CharTokenizer("pikachu")
+    model = _tiny_gpt(tok.vocab_size)
+    config = model.config()
+    config.pop("dropout", None)
+    path = tmp_path / "old.npz"
+    arrays: dict[str, Any] = {f"param_{i}": p.data for i, p in enumerate(model.parameters())}
+    arrays["config"] = np.array(json.dumps(config))
+    arrays["vocab"] = np.array(json.dumps(list(tok.stoi)))
+    np.savez(path, **arrays)
+    reloaded, _ = load(path)
+    assert isinstance(reloaded, GPT)
+    assert reloaded.dropout == 0.0

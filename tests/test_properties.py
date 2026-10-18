@@ -251,6 +251,7 @@ def model_configs(vocab_size: int) -> st.SearchStrategy[ModelConfig]:
                 "embed_dim": st.sampled_from([2, 4]),
                 "num_heads": st.sampled_from([1, 2]),
                 "num_layers": st.integers(min_value=1, max_value=2),
+                "dropout": st.sampled_from([0.0, 0.25, 0.5]),
             }
         ),
     )

@@ -29,6 +29,7 @@ def test_build_model_roundtrips_every_kind():
                 "embed_dim": 16,
                 "num_heads": 2,
                 "num_layers": 2,
+                "dropout": 0.0,
             },
         ),
     ]

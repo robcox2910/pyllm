@@ -69,4 +69,5 @@ class GPT(LanguageModel):
             "embed_dim": self.embed_dim,
             "num_heads": self.num_heads,
             "num_layers": self.num_layers,
+            "dropout": self.dropout,
         }

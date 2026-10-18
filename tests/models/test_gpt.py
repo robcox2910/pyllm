@@ -39,6 +39,7 @@ def test_gpt_mode_and_config():
         "embed_dim": 16,
         "num_heads": 2,
         "num_layers": 2,
+        "dropout": 0.0,
     }
 
 
