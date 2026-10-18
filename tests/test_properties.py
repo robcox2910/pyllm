@@ -262,10 +262,15 @@ def any_float64() -> st.SearchStrategy[float]:
 
 
 @st.composite
-def texts_and_recipes(draw: st.DrawFn) -> tuple[str, ModelConfig]:
-    """Make a tokenizer's training text, and a small model recipe card that fits its alphabet."""
-    text = draw(st.text(min_size=1, max_size=MAX_ALPHABET))
-    return text, draw(model_configs(len(set(text))))
+def tokenizers_and_recipes(draw: st.DrawFn) -> tuple[CharTokenizer | BPETokenizer, ModelConfig]:
+    """Make a character or BPE tokenizer, and a small model recipe card that fits its vocabulary."""
+    tokenizer: CharTokenizer | BPETokenizer
+    if draw(st.booleans()):
+        tokenizer = BPETokenizer()
+        tokenizer.train(draw(repetitive_texts()), draw(merge_counts()))
+    else:
+        tokenizer = CharTokenizer(draw(st.text(min_size=1, max_size=MAX_ALPHABET)))
+    return tokenizer, draw(model_configs(tokenizer.vocab_size))
 
 
 def weight_values() -> st.SearchStrategy[list[float]]:
@@ -467,19 +472,23 @@ def test_token_numbers_fit_the_vocabulary(text_and_msg: tuple[str, str], merges:
 # --- Checkpoints: save, load, and get the same model back ---------------------
 
 
-@given(text_and_recipe=texts_and_recipes(), weights=weight_values())
+@given(tokenizer_and_recipe=tokenizers_and_recipes(), weights=weight_values())
 def test_checkpoint_round_trip(
-    text_and_recipe: tuple[str, ModelConfig], weights: list[float]
+    tokenizer_and_recipe: tuple[CharTokenizer | BPETokenizer, ModelConfig], weights: list[float]
 ) -> None:
-    """Saving a model and loading it back gives the same recipe, alphabet and every weight, bit for bit."""
-    text, recipe = text_and_recipe
-    model, tokenizer = filled_model(recipe, weights), CharTokenizer(text)
+    """Saving a model and loading it back gives the same recipe, tokenizer and every weight, bit for bit."""
+    tokenizer, recipe = tokenizer_and_recipe
+    model = filled_model(recipe, weights)
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / "model.npz"
         save(path, model, tokenizer)
         reloaded, reloaded_tokenizer = load(path)
     assert repr(reloaded.config()) == repr(model.config())
+    assert type(reloaded_tokenizer) is type(tokenizer)
     assert reloaded_tokenizer.stoi == tokenizer.stoi
+    if isinstance(tokenizer, BPETokenizer):
+        assert isinstance(reloaded_tokenizer, BPETokenizer)
+        assert reloaded_tokenizer.merges == tokenizer.merges
     for before, after in zip(model.parameters(), reloaded.parameters(), strict=True):
         assert after.data.dtype == before.data.dtype
         assert after.data.shape == before.data.shape

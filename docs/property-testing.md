@@ -159,7 +159,7 @@ PyLLM has nine more properties:
 | Encoding a message and decoding it gives back exactly the same message | `test_char_tokenizer_round_trip` |
 | BPE may glue letters into chunks, but decoding still gives back exactly the message | `test_bpe_round_trip` |
 | Every number BPE hands out is between 0 and `vocab_size - 1` | `test_token_numbers_fit_the_vocabulary` |
-| Saving a model and loading it gives the same recipe, alphabet and weights, bit for bit | `test_checkpoint_round_trip` |
+| Saving a model and loading it gives the same recipe, tokenizer (letters or BPE chunks) and weights, bit for bit | `test_checkpoint_round_trip` |
 | Cut Pebble off anywhere: if the referee calls it finished, Pebble's own parser agrees | `test_whatever_the_referee_passes_pebble_passes` |
 | Tidy Pebble is finished, and the referee never whistles part-way through typing it | `test_every_prefix_of_a_finished_program_is_viable` |
 | Whatever a model types, the referee answers, and never whistles at finished text | `test_the_referee_always_answers` |

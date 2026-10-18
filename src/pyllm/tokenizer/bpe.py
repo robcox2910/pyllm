@@ -22,11 +22,28 @@ class BPETokenizer:
         """Start with no merges and an empty vocabulary; call `train` to learn."""
         # merges[i] = the (left, right) pair learned at step i, in order.
         self.merges: list[tuple[str, str]] = []
+        self.base_chars: list[str] = []
         self.stoi: dict[str, int] = {}
         self.itos: dict[int, str] = {}
 
+    @classmethod
+    def from_merges(
+        cls, base_chars: Iterable[str], merges: Iterable[tuple[str, str]]
+    ) -> BPETokenizer:
+        """Rebuild a trained tokenizer from its starting letters and learned merges.
+
+        This is how a checkpoint brings a BPE tokenizer back: the letters and the
+        merges, in their original order, are all it takes to rebuild the exact
+        same token numbers without seeing the training text again.
+        """
+        tokenizer = cls()
+        tokenizer.merges = [(left, right) for left, right in merges]
+        tokenizer._rebuild_vocab(base_chars)
+        return tokenizer
+
     def _rebuild_vocab(self, base_chars: Iterable[str]) -> None:
-        tokens = list(base_chars)
+        self.base_chars = list(base_chars)
+        tokens = list(self.base_chars)
         for left, right in self.merges:
             tokens.append(left + right)
         self.stoi = {token: index for index, token in enumerate(tokens)}
