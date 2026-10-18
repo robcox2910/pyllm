@@ -128,3 +128,53 @@ def test_referee_knows_every_pebble_reserved_word():
     from pyllm.pebble.referee import _KEYWORDS
 
     assert set(KEYWORDS) <= _KEYWORDS
+
+
+def test_deeply_nested_brackets_get_the_whistle_not_a_crash():
+    """Deeply nested brackets get the whistle instead of crashing the referee.
+
+    Found by test_the_referee_always_answers in tests/test_properties.py.
+    """
+    text = "let a = " + "(" * 1000 + "1" + ")" * 1000
+    assert not viable(text)
+    assert not complete(text)
+
+
+def test_a_long_chain_of_nots_gets_the_whistle_not_a_crash():
+    """A long chain of `not`s gets the whistle instead of crashing the referee."""
+    text = "let a = " + "not " * 1000 + "1"
+    assert not viable(text)
+    assert not complete(text)
+
+
+def test_everyday_nesting_is_still_fine():
+    """A few levels of brackets and nots are still finished, valid Pebble."""
+    assert complete("let a = " + "(" * 20 + "not not 1" + ")" * 20)
+
+
+# Pebble refuses anything nested more than 100 levels deep, and it counts
+# every statement, every operator's right-hand side, every minus sign, bracket,
+# call argument and `not`. The referee must count at least as much.
+PEBBLE_DEEP_PROGRAMS = {
+    "plus minus bracket": "let a = " + "1 + -(" * 33 + "1" + ")" * 33,
+    "every operator": "let x = " + "a or b and c == d + e * -(" * 15 + "1" + ")" * 15,
+}
+
+
+@pytest.mark.parametrize(
+    "text", list(PEBBLE_DEEP_PROGRAMS.values()), ids=list(PEBBLE_DEEP_PROGRAMS)
+)
+def test_nesting_counts_everything_pebble_counts(text: str) -> None:
+    """Programs Pebble calls too deeply nested get the whistle from the referee too."""
+    assert not viable(text)
+    assert not complete(text)
+
+
+def test_nesting_right_at_the_limit_is_fine():
+    """A statement, its value and 88 brackets is 90 levels: exactly the limit, still fine."""
+    assert complete("let a = " + "(" * 88 + "1" + ")" * 88)
+
+
+def test_nesting_one_past_the_limit_gets_the_whistle():
+    """One more bracket than the limit allows gets the whistle."""
+    assert not viable("let a = " + "(" * 89 + "1" + ")" * 89)

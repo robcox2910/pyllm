@@ -16,7 +16,7 @@ Programs are separated by a blank line, just like in the training corpus. Every
 earlier program must be complete; only the last one may still be in progress.
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import lru_cache
 from typing import Literal
 
@@ -68,6 +68,18 @@ _NAME_CHARS = _NAME_START + "0123456789"
 _DIGITS = "0123456789"
 _STRING_BANNED = '"\\\n{}'
 _COMPARE_OPS = (" == ", " != ", " < ", " <= ", " > ", " >= ")
+# How many levels may be open at once. The parser calls itself once per level,
+# so without a limit very deep nesting runs out of Python's stack (a
+# RecursionError) instead of getting the whistle. Real code never comes close;
+# a model stuck typing "(((((" does.
+#
+# Pebble has its own limit (MAX_NESTING = 100 in pebble's parser.py). It counts
+# one level for every statement and every expression it reads: the whole value,
+# each operator's right-hand side, each minus sign's and `not`'s operand, each
+# bracket and each call argument. We count every one of those too (plus blocks
+# and `range(...)`'s argument, which can only make us stricter), and stop well
+# below 100, so anything the referee accepts is never too deep for Pebble.
+_MAX_NESTING = 90
 
 
 class _NeedMoreError(Exception):
@@ -89,6 +101,25 @@ class _Parser:
         """Start reading `text` from the first character."""
         self.text = text
         self.pos = 0
+        self.nesting = 0
+
+    # -- nesting ---------------------------------------------------------------
+
+    def _open(self) -> None:
+        """Step one level deeper (see `_MAX_NESTING`); too deep is a foul."""
+        self.nesting += 1
+        if self.nesting > _MAX_NESTING:
+            raise _FoulError
+
+    def _close(self) -> None:
+        """Step back out of one level."""
+        self.nesting -= 1
+
+    def _deeper(self, parse: Callable[[], None]) -> None:
+        """Run `parse` one level deeper."""
+        self._open()
+        parse()
+        self._close()
 
     # -- reading helpers -------------------------------------------------------
 
@@ -156,6 +187,7 @@ class _Parser:
     def _parse_block(self, depth: int, in_fn: bool) -> None:
         """`{` already read: one or more indented statements, then `}`."""
         inner = _INDENT * (depth + 1)
+        self._open()
         self._expect("\n" + inner)
         self._parse_statement(depth + 1, in_fn)
         while True:
@@ -165,12 +197,19 @@ class _Parser:
             if step is None:
                 raise _FoulError
             if step != inner:
+                self._close()
                 return
             self._parse_statement(depth + 1, in_fn)
 
     # -- statements ------------------------------------------------------------
 
     def _parse_statement(self, depth: int, in_fn: bool) -> None:
+        """Read one statement, one level deeper."""
+        self._open()
+        self._parse_statement_here(depth, in_fn)
+        self._close()
+
+    def _parse_statement_here(self, depth: int, in_fn: bool) -> None:
         char = self._peek()
         if char == "#":
             self._parse_comment()
@@ -247,7 +286,7 @@ class _Parser:
         self._expect(" ")
         self._name()
         self._expect(" in range(")
-        self._parse_expr()
+        self._deeper(self._parse_expr)  # Pebble reads `range(...)` as a call
         self._expect(") {")
         self._parse_block(depth, in_fn)
 
@@ -274,41 +313,45 @@ class _Parser:
     # -- expressions, loosest-binding first ------------------------------------
 
     def _parse_expr(self) -> None:
+        self._open()
         self._parse_and()
         while self._choose([" or "]):
-            self._parse_and()
+            self._deeper(self._parse_and)
+        self._close()
 
     def _parse_and(self) -> None:
         self._parse_not()
         while self._choose([" and "]):
-            self._parse_not()
+            self._deeper(self._parse_not)
 
     def _parse_not(self) -> None:
         # Only a full "not " counts: "no" might just be the start of a name.
         if self.text.startswith("not ", self.pos):
             self.pos += len("not ")
-            self._parse_not()
+            self._deeper(self._parse_not)
         else:
             self._parse_compare()
 
     def _parse_compare(self) -> None:
         self._parse_sum()
         if self._choose(_COMPARE_OPS):
-            self._parse_sum()  # just one comparison: no `a < b < c`
+            self._deeper(self._parse_sum)  # just one comparison: no `a < b < c`
 
     def _parse_sum(self) -> None:
         self._parse_term()
         while self._choose([" + ", " - "]):
-            self._parse_term()
+            self._deeper(self._parse_term)
 
     def _parse_term(self) -> None:
         self._parse_unary()
         while self._choose([" * ", " / ", " % "]):
-            self._parse_unary()
+            self._deeper(self._parse_unary)
 
     def _parse_unary(self) -> None:
-        self._choose(["-"])  # an optional minus sign in front
-        self._parse_primary()
+        if self._choose(["-"]):  # an optional minus sign in front
+            self._deeper(self._parse_primary)
+        else:
+            self._parse_primary()
 
     def _parse_string(self) -> None:
         """Read a double-quoted string that avoids the banned characters."""
