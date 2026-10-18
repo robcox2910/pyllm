@@ -155,7 +155,7 @@ PyLLM has nine more properties:
 | Rule | Test |
 |---|---|
 | For tanh, exp, squaring, sums, averages and reshapes, `backward()` matches the measured slope | `test_one_input_gradients_match_nudging` |
-| For `a @ b` on any tables that fit, batches included, `backward()` matches the measured slope | `test_matmul_gradients_match_nudging` |
+| For `a @ b` on any vectors or tables that fit, batches included, `backward()` matches the measured slope | `test_matmul_gradients_match_nudging` |
 | Encoding a message and decoding it gives back exactly the same message | `test_char_tokenizer_round_trip` |
 | BPE may glue letters into chunks, but decoding still gives back exactly the message | `test_bpe_round_trip` |
 | Every number BPE hands out is between 0 and `vocab_size - 1` | `test_token_numbers_fit_the_vocabulary` |

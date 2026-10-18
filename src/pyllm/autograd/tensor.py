@@ -187,12 +187,25 @@ class Tensor:
         is a plain 2-D matrix (shape (D, H)).  Gradients are unbroadcasted back
         to each operand's original shape automatically, so batched matmul works
         just like the simple 2-D case.
+
+        Plain 1-D vectors work too, following numpy's rules: a vector on the
+        left acts like a one-row table, a vector on the right like a one-column
+        table, and that extra row or column is dropped from the answer.  The
+        backward pass puts it back, does the table maths, then drops it again.
         """
         out = Tensor(self.data @ other.data, (self, other), "@")
 
         def _backward() -> None:
-            self.grad += _unbroadcast(out.grad @ other.data.swapaxes(-1, -2), self.data.shape)
-            other.grad += _unbroadcast(self.data.swapaxes(-1, -2) @ out.grad, other.data.shape)
+            # Treat 1-D operands as one-row / one-column tables, like numpy does.
+            a = self.data[np.newaxis, :] if self.data.ndim == 1 else self.data
+            b = other.data[:, np.newaxis] if other.data.ndim == 1 else other.data
+            # Put back the row / column numpy dropped from the answer.
+            batch = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])
+            grad = out.grad.reshape((*batch, a.shape[-2], b.shape[-1]))
+            grad_a = _unbroadcast(grad @ b.swapaxes(-1, -2), a.shape)
+            grad_b = _unbroadcast(a.swapaxes(-1, -2) @ grad, b.shape)
+            self.grad += grad_a.reshape(self.data.shape)
+            other.grad += grad_b.reshape(other.data.shape)
 
         out._backward = _backward
         return out

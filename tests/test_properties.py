@@ -104,11 +104,11 @@ def two_shapes_that_broadcast() -> st.SearchStrategy[tuple[tuple[int, ...], ...]
 
 
 def two_shapes_that_matmul() -> st.SearchStrategy[tuple[tuple[int, ...], ...]]:
-    """Make two shapes that `@` can multiply, like (2, 3) and (3, 4), maybe with a batch in front."""
-    # Our `@` is for tables (2-D and up), as its docstring says, so plain
-    # 1-D vectors are not made here.
+    """Make two shapes that `@` can multiply, like (2, 3) and (3, 4), (3,) and (3, 4), or (3,) and (3,)."""
+    # The `?` lets either side be a plain 1-D vector, as numpy's matmul allows;
+    # a batch may still sit in front of any side that is a table.
     return hnp.mutually_broadcastable_shapes(
-        signature="(m,n),(n,p)->(m,p)", max_dims=MAX_DIMS, max_side=MAX_SIDE
+        signature="(m?,n),(n,p?)->(m?,p?)", max_dims=MAX_DIMS, max_side=MAX_SIDE
     ).map(operator.attrgetter("input_shapes"))
 
 
@@ -134,7 +134,7 @@ def two_input_problems(draw: st.DrawFn) -> tuple[Tensor, Tensor, Tensor]:
 
 @st.composite
 def matmul_problems(draw: st.DrawFn) -> tuple[Tensor, Tensor, Tensor]:
-    """Make two tables `@` can multiply, plus a weight for every number of the answer."""
+    """Make two vectors or tables `@` can multiply, plus a weight for every number of the answer."""
     a_shape, b_shape = draw(two_shapes_that_matmul())
     a = draw(tensors(a_shape, small_numbers()))
     b = draw(tensors(b_shape, small_numbers()))
@@ -534,7 +534,7 @@ def test_one_input_gradients_match_nudging(
 
 @given(problem=matmul_problems())
 def test_matmul_gradients_match_nudging(problem: tuple[Tensor, Tensor, Tensor]) -> None:
-    """For `a @ b` on any tables that fit, batches included, backward() matches the measured slope."""
+    """For `a @ b` on any vectors or tables that fit, batches included, backward() matches the measured slope."""
     a, b, weights = problem
     assert_gradients_match(lambda: (a @ b) * weights, a, b)
 
