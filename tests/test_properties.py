@@ -462,10 +462,11 @@ def test_bpe_round_trip(text_and_msg: tuple[str, str], merges: int) -> None:
 
 @given(text_and_message(repetitive_texts()), merge_counts())
 def test_token_numbers_fit_the_vocabulary(text_and_msg: tuple[str, str], merges: int) -> None:
-    """Every number BPE hands out is between 0 and vocab_size - 1, so the model can look it up."""
+    """Every number BPE hands out is between 0 and vocab_size - 1, and no token appears twice."""
     text, message = text_and_msg
     tokenizer = BPETokenizer()
     tokenizer.train(text, num_merges=merges)
+    assert tokenizer.vocab_size == len(tokenizer.base_chars) + len(tokenizer.merges)
     for number in tokenizer.encode(message):
         assert 0 <= number < tokenizer.vocab_size
 

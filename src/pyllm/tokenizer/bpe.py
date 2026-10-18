@@ -45,6 +45,12 @@ class BPETokenizer:
         self.base_chars = list(base_chars)
         tokens = list(self.base_chars)
         for left, right in self.merges:
+            if left + right in tokens:
+                msg = (
+                    f"BPE tokenizer would know {left + right!r} twice: "
+                    f"merge ({left!r}, {right!r}) remakes a token it already has"
+                )
+                raise ValueError(msg)
             tokens.append(left + right)
         self.stoi = {token: index for index, token in enumerate(tokens)}
         self.itos = {index: token for token, index in self.stoi.items()}
@@ -52,15 +58,15 @@ class BPETokenizer:
     def train(self, text: str, num_merges: int) -> None:
         """Learn the chunks: repeatedly glue the most common neighbour pair."""
         base_chars = sorted(set(text))
+        known = set(base_chars)
         symbols = list(text)  # each element is a token string, starting as chars
         self.merges = []
         for _ in range(num_merges):
-            pairs = Counter(pairwise(symbols))
-            if not pairs:
-                break
-            (left, right), count = pairs.most_common(1)[0]
-            if count < _MIN_PAIR_COUNT:
+            pair = _best_pair(Counter(pairwise(symbols)), known)
+            if pair is None:
                 break  # nothing worth merging
+            left, right = pair
+            known.add(left + right)
             self.merges.append((left, right))
             symbols = _merge_pair(symbols, left, right)
         self._rebuild_vocab(base_chars)
@@ -80,6 +86,21 @@ class BPETokenizer:
     def decode(self, ids: Iterable[int]) -> str:
         """Read the text back out by stitching each token's characters together."""
         return "".join(self.itos[index] for index in ids)
+
+
+def _best_pair(pairs: Counter[tuple[str, str]], known: set[str]) -> tuple[str, str] | None:
+    """Pick the most common neighbour pair worth gluing, or None if there isn't one.
+
+    A pair must show up at least twice, and gluing it must make a brand-new
+    token: two different pairs like ("ab", "c") and ("a", "bc") would both make
+    "abc", and a tokenizer must never know the same token twice.
+    """
+    for pair, count in pairs.most_common():
+        if count < _MIN_PAIR_COUNT:
+            return None
+        if pair[0] + pair[1] not in known:
+            return pair
+    return None
 
 
 def _merge_pair(symbols: list[str], left: str, right: str) -> list[str]:

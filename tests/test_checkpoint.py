@@ -225,6 +225,7 @@ DAMAGES: dict[str, Callable[[dict[str, Any]], object]] = {
     "dropped-merge": lambda card: {**card, "merges": card["merges"][:-1]},
     "short-base": lambda card: {**card, "base_chars": card["base_chars"][:-1]},
     "char-for-bpe-vocab": lambda _card: {"kind": "char"},
+    "same-token-twice": lambda card: {**card, "merges": [*card["merges"], card["merges"][0]]},
 }
 """Ways a BPE checkpoint's tokenizer card can be damaged, each by name."""
 
