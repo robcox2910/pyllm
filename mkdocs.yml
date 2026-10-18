@@ -51,7 +51,7 @@ nav:
   - "The referee: making the model play by the rules": concepts/the-referee.md
   - "What Is a Token? (Chopping Text into Lego Bricks)": concepts/tokens.md
   - How a Transformer is built (stacking the pieces): concepts/transformer.md
-  - "Property Testing (The Examiner Who Never Runs Out of Questions)": property-testing.md
+  - "Property Testing (The Tireless Examiner)": property-testing.md
   # series-nav:start
   - The series:
       - Series home: https://robcox2910.github.io/

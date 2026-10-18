@@ -1,4 +1,4 @@
-# Property Testing (The Examiner Who Never Runs Out of Questions)
+# Property Testing (The Tireless Examiner)
 
 ## The Tireless Examiner
 
@@ -133,8 +133,9 @@ Line by line:
   copied `backward()`'s working could never catch its mistakes.
 - **`@given(...)`** runs the test many times (100 in a normal run), each
   with a fresh problem and a fresh operator.
-- **The `assert`** (inside `assert_gradients_match`) is the rule itself:
-  the slope `backward()` worked out must match the measured one.
+- **`np.testing.assert_allclose`** (inside `assert_gradients_match`) is
+  the rule itself: the slope `backward()` worked out must match the
+  measured one, give or take the tolerance.
 
 Why the `weights`? Without them, the answer is just added up, so every
 number in it counts exactly once. An operator that forgot to pass the
@@ -165,7 +166,8 @@ PyLLM has nine more properties:
 
 The tokenizer tests only write messages with letters the tokenizer has
 seen. That's a known limit, not a forgotten case: a `CharTokenizer` that
-meets a brand-new letter raises a `KeyError`, as its docstring says.
+meets a brand-new letter raises a `KeyError`, as its docstring says, and
+`BPETokenizer` starts from the same single letters.
 
 ## Try It Yourself
 
@@ -205,8 +207,8 @@ E           text_and_msg=(' ', ' '),
 E       )
 ```
 
-Look at how small that is. Hypothesis tried long strings full of emoji,
-accents and Chinese, then shrank the failure all the way down to a
+Look at how small that is. Hypothesis could try long strings full of
+emoji, accents and Chinese, but it shrank the failure all the way down to a
 tokenizer that knows **one letter, a space**, and a message that is
 **one space**. Encode it, decode it, and the space has vanished.
 
@@ -241,29 +243,33 @@ Python stops with a `RecursionError` when the stack runs out. Give it
 about 120 brackets inside each other, `let a = ((((...1...))))`, and it
 crashed. But *exactly* how many depends on how much of the stack was
 already in use, so each time Hypothesis replayed a smaller example, the
-crash landed on a different line. Hypothesis noticed, and told us.
+crash landed on a different line. A **flaky** test is one that asks the
+same question and gets a different answer. Hypothesis noticed, and told
+us. Running it again until it went green would have hidden the bug; the
+right move was to fix the crash.
 
 The example tests never nested more than a couple of brackets. Real code
 doesn't. But a small model can get stuck typing `((((((`, and then
 `generate()`, which asks the referee about every letter, would crash.
 
 The old code had no counting at all. The fix counts how deep we are,
-and gives the whistle past a fixed limit (`_MAX_NESTING = 50` brackets,
-calls, `not`s and blocks) instead of waiting for Python to run out. Every
-bracket, call, `not` and block now steps in with `_open()` and back out
-with `_close()`:
+and gives the whistle past a fixed limit (`_MAX_NESTING = 90`) instead of
+waiting for Python to run out. Every statement, operator's right-hand
+side, minus sign, bracket, call, `not` and block now steps in with
+`_open()` and back out with `_close()`:
 
 ```python
 def _open(self) -> None:
-    """Step one level deeper (a bracket, call, `not` or block); too deep is a foul."""
+    """Step one level deeper (see `_MAX_NESTING`); too deep is a foul."""
     self.nesting += 1
     if self.nesting > _MAX_NESTING:
         raise _FoulError
 ```
 
 A fixed limit gives the same answer every time, wherever it's called
-from. Saying "foul" to more text is always safe: the referee stays a
-strict subset of real Pebble. The crash also became plain example tests
+from. Pebble has a limit too: 100 levels, counting the same kinds of
+step. The referee counts at least everything Pebble counts and stops at
+90, so anything it accepts is never too deep for Pebble. The crash also became plain example tests
 in `tests/pebble/test_referee.py`:
 
 ```python

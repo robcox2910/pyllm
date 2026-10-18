@@ -58,7 +58,9 @@ def text_and_message(
     text = draw(training_texts() if texts is None else texts)
     # Known limit (deferred): a tokenizer only knows the letters it was built
     # from. CharTokenizer's docstring says encoding an unseen character raises
-    # a KeyError, so messages here use only letters the tokenizer has seen.
+    # a KeyError, and BPETokenizer.encode starts from the same single letters
+    # (it looks each one up in `stoi`), so messages here use only letters the
+    # tokenizer has seen.
     letters = draw(st.lists(st.sampled_from(sorted(set(text)))))
     message = "".join(letters)
     return text, message
@@ -350,12 +352,16 @@ def pebble_expressions() -> st.SearchStrategy[str]:
     return st.recursive(pebble_atoms(), bigger_expressions, max_leaves=MAX_EXPRESSION_LEAVES)
 
 
+def braced(depth: int, body: list[str]) -> str:
+    """Wrap statements in `{ ... }`: each indented one level past `depth`, then `}`."""
+    inner = "    " * (depth + 1)
+    return " {\n" + inner + ("\n" + inner).join(body) + "\n" + "    " * depth + "}"
+
+
 def pebble_blocks(depth: int, in_fn: bool) -> st.SearchStrategy[str]:
     """Make a `{ ... }` block: indented statements, then `}` at `depth`'s indent."""
-    inner = "    " * (depth + 1)
     lines = st.lists(pebble_statements(depth + 1, in_fn), min_size=1, max_size=MAX_STATEMENTS)
-    closing = "\n" + "    " * depth + "}"
-    return lines.map(lambda body: " {\n" + inner + ("\n" + inner).join(body) + closing)
+    return st.builds(braced, st.just(depth), lines)
 
 
 def pebble_statements(depth: int, in_fn: bool) -> st.SearchStrategy[str]:
