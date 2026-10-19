@@ -76,9 +76,12 @@ _COMPARE_OPS = (" == ", " != ", " < ", " <= ", " > ", " >= ")
 # Pebble has its own limit (MAX_NESTING = 100 in pebble's parser.py). It counts
 # one level for every statement and every expression it reads: the whole value,
 # each operator's right-hand side, each minus sign's and `not`'s operand, each
-# bracket and each call argument. We count every one of those too (plus blocks
-# and `range(...)`'s argument, which can only make us stricter), and stop well
-# below 100, so anything the referee accepts is never too deep for Pebble.
+# bracket and each call argument. On top of that, every operator in a flat chain
+# like `1 + 2 * 3 or x` counts one more level that stays open until the whole
+# chain (the whole value, bracket, argument or right-hand side) has been read.
+# We count every one of those too (plus blocks and `range(...)`'s argument,
+# which can only make us stricter), and stop well below 100, so anything the
+# referee accepts is never too deep for Pebble.
 _MAX_NESTING = 90
 
 
@@ -116,10 +119,25 @@ class _Parser:
         self.nesting -= 1
 
     def _deeper(self, parse: Callable[[], None]) -> None:
-        """Run `parse` one level deeper."""
+        """Run `parse` one level deeper, as a fresh chain of its own.
+
+        Operators read inside `parse` may leave levels open (see `_chain_step`);
+        they all close when `parse` is done, just as Pebble's do.
+        """
+        outer = self.nesting
         self._open()
         parse()
-        self._close()
+        self.nesting = outer
+
+    def _chain_step(self, parse: Callable[[], None]) -> None:
+        """Read one operator's right-hand side with `parse`.
+
+        The operator itself counts one level that stays open until the chain it
+        belongs to is finished (Pebble does the same), and its right-hand side
+        is one level deeper again.
+        """
+        self._open()
+        self._deeper(parse)
 
     # -- reading helpers -------------------------------------------------------
 
@@ -313,16 +331,17 @@ class _Parser:
     # -- expressions, loosest-binding first ------------------------------------
 
     def _parse_expr(self) -> None:
-        self._open()
+        self._deeper(self._parse_or)
+
+    def _parse_or(self) -> None:
         self._parse_and()
         while self._choose([" or "]):
-            self._deeper(self._parse_and)
-        self._close()
+            self._chain_step(self._parse_and)
 
     def _parse_and(self) -> None:
         self._parse_not()
         while self._choose([" and "]):
-            self._deeper(self._parse_not)
+            self._chain_step(self._parse_not)
 
     def _parse_not(self) -> None:
         # Only a full "not " counts: "no" might just be the start of a name.
@@ -335,17 +354,17 @@ class _Parser:
     def _parse_compare(self) -> None:
         self._parse_sum()
         if self._choose(_COMPARE_OPS):
-            self._deeper(self._parse_sum)  # just one comparison: no `a < b < c`
+            self._chain_step(self._parse_sum)  # just one comparison: no `a < b < c`
 
     def _parse_sum(self) -> None:
         self._parse_term()
         while self._choose([" + ", " - "]):
-            self._deeper(self._parse_term)
+            self._chain_step(self._parse_term)
 
     def _parse_term(self) -> None:
         self._parse_unary()
         while self._choose([" * ", " / ", " % "]):
-            self._deeper(self._parse_unary)
+            self._chain_step(self._parse_unary)
 
     def _parse_unary(self) -> None:
         if self._choose(["-"]):  # an optional minus sign in front

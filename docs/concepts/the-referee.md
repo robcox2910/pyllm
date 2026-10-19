@@ -68,17 +68,12 @@ $ uv run pyllm pebble --seed 7 --score                # the model on its own
 parse rate: 0.0% of 1 programs
 
 $ uv run pyllm pebble --seed 7 --constrained --score  # with the referee
-let result = a * 15 - 89
-fn helper(n) {
-    let result = 79 + 91 * (z - total)
-    if not 28 > n or y < n {
-        let total = total - 69 + n
-    }
-}
-let c = make(43, a * 67)
-total = 31 % 16
+let total = n * (63 - 99)
 
-parse rate: 100.0% of 1 programs
+let result = c
+fount = 55 + (n - b) % (6 - b)
+
+parse rate: 100.0% of 2 programs
 ```
 
 ## Why does this matter?
