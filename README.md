@@ -57,10 +57,10 @@ parser and reporting what percentage parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --temperature 0.5 --score
-let result = count + 96 * (2 + n)
+let result = 62
     }
-}
-let result = count * (count + x)
+    if count < 47 {
+        let c = 51 + (83 + 32)
 ...
 parse rate: 0.0% of 1 programs
 ```
@@ -78,17 +78,12 @@ one. Same tiny brain — but now every program it returns parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --constrained --score
-let result = a * 15 - 89
-fn helper(n) {
-    let result = 79 + 91 * (z - total)
-    if not 28 > n or y < n {
-        let total = total - 69 + n
-    }
-}
-let c = make(43, a * 67)
-total = 31 % 16
+let total = n * (63 - 99)
 
-parse rate: 100.0% of 1 programs
+let result = c
+fount = 55 + (n - b) % (6 - b)
+
+parse rate: 100.0% of 2 programs
 ```
 
 From Python: `generate_pebble(constrained=True)`. See
