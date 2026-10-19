@@ -25,8 +25,8 @@ $ uv run pyllm --seed 0 --max-new-tokens 40
 machop
 machoke
 machamp
-beedrill
-pidgey
+bellsprout
+weepin
 ```
 
 Turn the boldness dial with `--temperature` (0 = safe/greedy, higher = wilder)
@@ -57,10 +57,10 @@ parser and reporting what percentage parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --temperature 0.5 --score
-let total = total * z * (35 % 87)
-    print(compute())
-        let a = (y - result) % (37 + result)
+let result = count + 96 * (2 + n)
     }
+}
+let result = count * (count + x)
 ...
 parse rate: 0.0% of 1 programs
 ```
@@ -78,15 +78,15 @@ one. Same tiny brain — but now every program it returns parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --constrained --score
-let value = step()
-print(14 - 82)
-for i in range(4) {
-    x = b
-    while 57 >= 48 and 83 != a {
-        print(compute())
-        let z = helper()
+let result = a * 15 - 89
+fn helper(n) {
+    let result = 79 + 91 * (z - total)
+    if not 28 > n or y < n {
+        let total = total - 69 + n
     }
 }
+let c = make(43, a * 67)
+total = 31 % 16
 
 parse rate: 100.0% of 1 programs
 ```
