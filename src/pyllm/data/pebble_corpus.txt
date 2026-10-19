@@ -17046,12 +17046,12 @@ if true {
 print(x)  # Fine -- x is still on the hallway whiteboard
 print(y)  # Error! y's whiteboard is in the if-room, and we left
 
-let x = 1  # Error: Variable 'x' already declared
-let x = 2
+let x = 1
+let x = 2  # Error: Variable 'x' already declared
 
-let x = 1  # Fine -- this is a different room
+let x = 1
 if true {
-    let x = 99
+    let x = 99  # Fine -- this is a different room
     print(x)  # Prints 99
 }
 print(x)  # Prints 1 -- the outer x was never changed
@@ -17060,10 +17060,10 @@ print(z)  # Error: Undeclared variable 'z'
 
 x = 5  # Error: Undeclared variable 'x'
 
-fn greet() {  # Error: Function 'greet' already defined
+fn greet() {
     print("hi")
 }
-fn greet() {
+fn greet() {  # Error: Function 'greet' already defined
     print("bye")
 }
 
@@ -17096,14 +17096,14 @@ fn check(x) {
 let total = 0  # Global scope
 fn process(n) {  # New scope: n is a parameter
     for i in range(n) {  # New scope: i is the loop variable
-# i is gone here (left the for-room)
-# temp is gone here (left the if-room)
-# n is still visible (we're still in the function)
         if i > 0 {  # New scope
             let temp = i  # Only visible inside this if-block
             total = total + temp
         }
     }
+    # i is gone here (left the for-room)
+    # temp is gone here (left the if-room)
+    # n is still visible (we're still in the function)
 }
 
 let xs = [10, 20, 30]
@@ -17684,7 +17684,6 @@ enum Direction {
 let d = Direction.Left
 match d {
     case Direction.Up {
-# prints: going left
         print("going up")
     }
     case Direction.Down {
@@ -17700,19 +17699,20 @@ match d {
         print("unknown")
     }
 }
+# prints: going left
 
 enum Color {
-# In a list
     Red,
-# In a dict
     Green,
-# In string interpolation
     Blue
 }
+# In a list
 let palette = [Color.Red, Color.Green, Color.Blue]
 print(palette[0])  # prints: Color.Red
+# In a dict
 let favorites = {"sky": Color.Blue, "grass": Color.Green}
 print(favorites["sky"])  # prints: Color.Blue
+# In string interpolation
 let c = Color.Red
 print("my color is {c}")  # prints: my color is Color.Red
 
@@ -17788,6 +17788,16 @@ try {
     print("Caught: {e}")
 } finally {
     print("This always runs!")
+}
+
+fn read_first(xs) {
+    try {
+        return xs[0]
+    } catch e {
+        return -1
+    } finally {
+        print("cleanup always happens")
+    }
 }
 
 let xs = [10, 20, 30]
@@ -17968,9 +17978,9 @@ fn square(x) {
 }
 print(map(square, [1, 2, 3, 4]))  # prints: [1, 4, 9, 16]
 
-print(map(fn(x) {  # prints: []
+print(map(fn(x) {
     return x
-}, []))
+}, []))  # prints: []
 
 let result = filter(fn(x) {
     return x > 2
@@ -17982,9 +17992,9 @@ fn is_even(x) {
 }
 print(filter(is_even, [1, 2, 3, 4, 5, 6]))  # prints: [2, 4, 6]
 
-print(filter(fn(x) {  # prints: []
+print(filter(fn(x) {
     return x > 100
-}, [1, 2, 3]))
+}, [1, 2, 3]))  # prints: []
 
 let sum = reduce(fn(acc, x) {
     return acc + x
@@ -17996,20 +18006,20 @@ fn multiply(a, b) {
 }
 print(reduce(multiply, [2, 3, 4], 1))  # prints: 24
 
-print(reduce(fn(a, b) {  # prints: 42
+print(reduce(fn(a, b) {
     return a + b
-}, [], 42))
+}, [], 42))  # prints: 42
 
 fn double(x) {
     return x * 2
 }
-# First filter the evens, then double them, then sum them up
 fn is_even(x) {
     return x % 2 == 0
 }
 fn add(a, b) {
     return a + b
 }
+# First filter the evens, then double them, then sum them up
 let nums = [1, 2, 3, 4, 5, 6]
 let result = reduce(add, map(double, filter(is_even, nums)), 0)
 print(result)  # prints: 24
@@ -18024,9 +18034,9 @@ let times3 = make_multiplier(3)
 print(map(times3, [1, 2, 3, 4]))  # prints: [3, 6, 9, 12]
 
 map(42, [1, 2])  # Error: map() expects a function
-filter(fn(x) {  # Error: filter() expects a list
+filter(fn(x) {
     return true
-}, "abc")
+}, "abc")  # Error: filter() expects a list
 
 class Animal {
     name,
@@ -18150,6 +18160,36 @@ print(w.status())  # prints: Tank (HP: 185)
 print(m.cast_spell(30))  # prints: Gandalf casts a spell!
 print(m.is_alive())  # prints: true (inherited from Character)
 
+# Extending a class that doesn't exist
+class Dog extends Unknown {  # Error: Unknown parent class 'Unknown'
+}
+# Extending something that isn't a class
+struct Point {
+    x,
+    y
+}
+class Bad extends Point {  # Error: 'Point' is not a class
+}
+# A class can't extend itself
+class Loop extends Loop {  # Error: A class cannot extend itself
+}
+# Duplicate field with parent
+class Dog extends Animal {
+    name  # Error: Duplicate field 'name'
+}  # (already inherited from Animal)
+# Using super outside a child class
+class Standalone {
+    fn go(self) {
+        super.go()  # Error: 'super' can only be used
+    }  # inside a child class
+}
+# Calling a method the parent doesn't have
+class Dog extends Animal {
+    fn speak(self) {
+        super.fly()  # Error: Parent class 'Animal'
+    }  # has no method 'fly'
+}
+
 for x in [10, 20, 30] {
     print(x)
 }
@@ -18232,10 +18272,10 @@ fn example(x) {
 }
 
 if condition {
-# W004: Empty block
+    # W004: Empty block
 }
 fn placeholder() {
-# W004: Empty block
+    # W004: Empty block
 }
 
 [expression for variable in iterable]
@@ -18351,7 +18391,6 @@ enum Direction {
 let d = Direction.Left
 match d {
     case Direction.Up {
-# prints: going left
         print("going up")
     }
     case Direction.Down {
@@ -18367,6 +18406,7 @@ match d {
         print("unknown")
     }
 }
+# prints: going left
 
 match day {
     case "Saturday" | "Sunday" {
@@ -18454,20 +18494,29 @@ fn quiet() {  # this IS available to importers
 import "math.pbl"  # same directory
 import "lib/utils.pbl"  # subdirectory called lib
 
+# geometry.pbl
+struct Point {
+    x,
+    y
+}
+fn distance(p) {
+    return (p.x ** 2 + p.y ** 2) ** 0.5
+}
+
 import "geometry.pbl"
 let p = Point(3, 4)
 print(distance(p))  # 5.0
 
 # c.pbl
 fn base() {
-# b.pbl
     return 1
 }
-# a.pbl
+# b.pbl
 import "c.pbl"
 fn mid() {
     return base() + 10
 }
+# a.pbl
 import "b.pbl"
 fn top() {
     return mid() + 100
@@ -18498,6 +18547,18 @@ fn mul(a, b) {
 from "helpers.pbl" import add, mul
 print(add(2, mul(3, 4)))  # 14
 
+# geometry.pbl
+struct Point {
+    x,
+    y
+}
+fn distance(p) {
+    return (p.x ** 2 + p.y ** 2) ** 0.5
+}
+fn translate(p, dx, dy) {
+    return Point(p.x + dx, p.y + dy)
+}
+
 import "geometry.pbl"
 let p = Point(3, 4)
 print(distance(p))  # 5.0
@@ -18508,9 +18569,9 @@ class Vector {
     x,
     y
 }
-let a = Vector(1, 2)  # Error! Pebble doesn't know how to add Vectors
+let a = Vector(1, 2)
 let b = Vector(3, 4)
-let c = a + b
+let c = a + b  # Error! Pebble doesn't know how to add Vectors
 
 class Vector {
     x,
@@ -18599,17 +18660,17 @@ print(a + b)  # prints: Fancy(130)
 class Plain {
     val
 }
-let a = Plain(1)  # Error: Unsupported operand types for +
+let a = Plain(1)
 let b = Plain(2)
-let c = a + b
+let c = a + b  # Error: Unsupported operand types for +
 
 # Binary dunder with wrong number of parameters
 class Bad {
     val,
     fn __add__(self) {  # Error: requires 2 parameters, got 1
-# Unary dunder with wrong number of parameters
     }
 }
+# Unary dunder with wrong number of parameters
 class Bad {
     val,
     fn __neg__(self, other) {  # Error: requires 1 parameter, got 2
@@ -18634,13 +18695,13 @@ class Money {
         return self.cents < other.cents
     }
     fn __str__(self) -> String {
-        let dollars = self.cents // 100  # $12.99
-        let remaining = self.cents % 100  # $1.04
+        let dollars = self.cents // 100
+        let remaining = self.cents % 100
         return "$" + str(dollars) + "." + str(remaining)
     }
 }
-let price = Money(1299)
-let tax = Money(104)
+let price = Money(1299)  # $12.99
+let tax = Money(104)  # $1.04
 let total = price + tax
 print(total)  # prints: $14.3
 print(price == tax)  # prints: false
@@ -18658,14 +18719,13 @@ print(4.0 ** 0.5)  # prints: 2.0   (square root!)
 
 # 2 ** 2 ** 3  means  2 ** (2 ** 3)  =  2 ** 8  =  256
 print(2 ** 2 ** 3)  # prints: 256
-print((2 ** 2) ** 3)  # prints: 64
 # Use parentheses to change grouping:
+print((2 ** 2) ** 3)  # prints: 64
 
 print(2 ** -1)  # prints: 0.5   (same as 1 / 2)
 
 print(-2 ** 2)  # prints: -4   (power first, then negate)
-print(-2 ** 2)
-# prints: 4    (negate first, then power)
+print(-2 ** 2)  # prints: 4    (negate first, then power)
 
 print(3 < 3.5)  # prints: true   (int vs float works fine)
 print(3.0 == 3)  # prints: true   (same value, different types)
@@ -18697,14 +18757,14 @@ print(16 >> 2)  # prints: 4    (16 → 8 → 4)
 
 # Multiplication before addition (level 10 > level 9)
 print(2 + 3 * 4)  # prints: 14     (not 20)
-print(2 ** 3 * 2)  # prints: 16     (8 * 2, not 2 ** 6)
-print(1 | 2 & 3)  # prints: 3      (1 | (2 & 3) = 1 | 2)
-print(1 & 3 << 1)  # prints: 0      (1 & (3 << 1) = 1 & 6)
-print((2 + 3) * 4)  # prints: 20
 # Power before multiplication (level 11 > level 10)
+print(2 ** 3 * 2)  # prints: 16     (8 * 2, not 2 ** 6)
 # Bitwise AND before bitwise OR (level 7 > level 5)
+print(1 | 2 & 3)  # prints: 3      (1 | (2 & 3) = 1 | 2)
 # Shifts before bitwise AND (level 8 > level 7)
+print(1 & 3 << 1)  # prints: 0      (1 & (3 << 1) = 1 & 6)
 # Use parentheses when in doubt!
+print((2 + 3) * 4)  # prints: 20
 
 # Left-associative: 10 - 3 - 2  =  (10 - 3) - 2  =  5
 print(10 - 3 - 2)  # prints: 5
@@ -18940,6 +19000,13 @@ print(type(true))  # prints: bool
 print(type([1, 2]))  # prints: list
 print(type({}))  # prints: dict
 
+struct Point {
+    x,
+    y
+}
+let p = Point(10, 20)
+print(type(p))  # prints: Point
+
 let x = 42
 if type(x) == "int" {
     print("it is a number")
@@ -18974,9 +19041,9 @@ fn double(x) {
 }
 print(map(double, [1, 2, 3]))  # prints: [2, 4, 6]
 
-print(map(fn(x) {  # prints: [11, 12, 13]
+print(map(fn(x) {
     return x + 10
-}, [1, 2, 3]))
+}, [1, 2, 3]))  # prints: [11, 12, 13]
 
 fn is_even(x) {
     return x % 2 == 0
@@ -19158,6 +19225,17 @@ for i in range(len(parts)) {
     print(parts[i])
 }
 
+struct Point {
+    x,
+    y
+}
+
+struct Point {
+    x,
+    y
+}
+let p = Point(10, 20)
+
 print(p.x)  # prints: 10
 print(p.y)  # prints: 20
 
@@ -19187,11 +19265,57 @@ print(points[0].x)  # prints: 1
 let locations = {"home": Point(0, 0), "school": Point(10, 5)}
 print(locations["school"].y)  # prints: 5
 
+struct Line {
+    start,
+    end
+}
+let line = Line(Point(0, 0), Point(10, 10))
+print(line.start.x)  # prints: 0
+print(line.end.y)  # prints: 10
+
 let a = Point(10, 20)
 let b = Point(10, 20)
 print(a == b)  # prints: true
 let c = Point(10, 30)
 print(a == c)  # prints: false
+
+struct Vec {
+    x,
+    y
+}
+let p = Point(10, 20)
+let v = Vec(10, 20)
+print(p == v)  # prints: false
+
+struct Color {
+    r,
+    g,
+    b
+}
+let red = Color(255, 0, 0)
+let blue = Color(0, 0, 255)
+print(red)  # prints: Color(r=255, g=0, b=0)
+print(blue)  # prints: Color(r=0, g=0, b=255)
+
+struct Student {
+    name,
+    age,
+    grade
+}
+let alice = Student("Alice", 12, "A")
+print(alice.name)  # prints: Alice
+print(alice.grade)  # prints: A
+alice.grade = "A+"
+print(alice)  # prints: Student(name=Alice, age=12, grade=A+)
+
+struct Node {
+    value,
+    next
+}
+let list = Node(1, Node(2, Node(3, 0)))
+print(list.value)  # prints: 1
+print(list.next.value)  # prints: 2
+print(list.next.next.value)  # prints: 3
 
 fn swap(a, b) {
     return [b, a]
@@ -19269,8 +19393,18 @@ fn square(x: Int) -> Int {
     return x * x
 }
 
+struct Point {
+    x: Float,
+    y: Float
+}
+
 let p = Point(1.0, 2.0)  # OK -- both are Float
 p.x = 3.0  # OK -- Float into a Float field
+
+struct Config {
+    name: String,
+    value  # accepts anything
+}
 
 let scores: List[Int] = [90, 85, 92]
 let names: List[String] = ["Alice", "Bob"]
@@ -19305,6 +19439,13 @@ fn first_two(items: List[Int]) -> List[Int] {
     return items[0:2]
 }
 
+struct Gradebook {
+    student: String,
+    scores: List[Int]
+}
+let book = Gradebook("Alice", [90, 85, 92])
+book.scores = [95, 88]  # OK -- List[Int]
+
 # Fully typed
 fn add(a: Int, b: Int) -> Int {
     return a + b
@@ -19318,6 +19459,20 @@ fn greet(name: String, times) {
     for i in range(times) {
         print("Hello {name}")
     }
+}
+
+struct Point {
+    x: Float,
+    y: Float
+}
+let origin: Point = Point(0.0, 0.0)
+fn distance(p: Point) -> Float {
+    return (p.x ** 2 + p.y ** 2) ** 0.5
+}
+
+struct Node {
+    value: Int,
+    label  # untyped -- could hold another Node or anything
 }
 
 fn calculate(a: Float, b: Float, op: String) -> Float {
@@ -19339,6 +19494,16 @@ fn calculate(a: Float, b: Float, op: String) -> Float {
 }
 print(calculate(10.0, 3.0, "+"))  # 13.0
 
+struct User {
+    name: String,
+    age: Int
+}
+fn describe(u: User) -> String {
+    return "{u.name} is {u.age} years old"
+}
+let alice: User = User("Alice", 12)
+print(describe(alice))  # Alice is 12 years old
+
 let x: Int = "hello"
 
 let x: Int = 42  # passes — 42 is an Int
@@ -19357,6 +19522,13 @@ fn greet() -> String {
 fn broken() -> Int {
     return "oops"  # fails — "oops" is not an Int
 }
+
+struct Point {
+    x: Float,
+    y: Float
+}
+Point(1.0, 2.0)  # passes — both are Float
+Point(1, 2.0)  # fails — 1 is not a Float
 
 let x = 42  # inferred as Int
 let y = x + 1  # inferred as Int (Int + Int = Int)
@@ -19379,6 +19551,13 @@ print(type(true))  # prints: bool
 print(type(null))  # prints: null
 print(type([1, 2]))  # prints: list
 print(type({}))  # prints: dict
+
+struct Point {
+    x,
+    y
+}
+let p = Point(10, 20)
+print(type(p))  # prints: Point
 
 enum Color {
     Red,
@@ -19444,6 +19623,16 @@ print(float(f) + 1)  # prints: 4.140000000000001
 
 let x = 42
 print("answer: {x}")  # prints: answer: 42
+
+let x: Int = 5
+let y: Null = null
+fn add(a: Int, b: Int) -> Int {
+    return a + b
+}
+struct Point {
+    x: Float,
+    y: Float
+}
 
 let scores: List[Int] = [90, 85, 92]
 let ages: Dict[String, Int] = {"Alice": 12, "Bob": 13}
