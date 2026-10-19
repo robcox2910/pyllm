@@ -67,3 +67,33 @@ def test_gradcheck_batched_matmul_linear_pattern():
     x = Tensor([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], [[0.5, -1.0, 2.0], [1.0, 0.0, -2.0]]])
     w = Tensor([[1.0, -1.0], [0.5, 2.0], [-2.0, 0.5]])
     _check(lambda: (x @ w).sum(), x, w)
+
+
+def _filled(*shape: int) -> Tensor:
+    """Make a tensor of the given shape filled with distinct, non-zero numbers."""
+    size = int(np.prod(shape))
+    return Tensor(np.linspace(-1.5, 2.0, size).reshape(shape))
+
+
+def test_gradcheck_vector_at_matrix():
+    """A 1-D vector @ a matrix gets gradients shaped like each operand."""
+    a, b = _filled(3), _filled(3, 4)
+    _check(lambda: (a @ b).tanh().sum(), a, b)
+
+
+def test_gradcheck_matrix_at_vector():
+    """A matrix @ a 1-D vector gets gradients shaped like each operand."""
+    a, b = _filled(2, 3), _filled(3)
+    _check(lambda: (a @ b).tanh().sum(), a, b)
+
+
+def test_gradcheck_vector_at_vector():
+    """Two 1-D vectors make a dot product, and both get gradients."""
+    a, b = _filled(3), Tensor([0.5, -1.0, 2.0])
+    _check(lambda: (a @ b).tanh(), a, b)
+
+
+def test_gradcheck_vector_against_batches():
+    """A 1-D vector on either side of a batch of matrices gets gradients too."""
+    v, batch = _filled(3), _filled(2, 3, 3)
+    _check(lambda: (v @ batch).tanh().sum() + (batch @ v).tanh().sum(), v, batch)

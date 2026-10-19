@@ -104,11 +104,11 @@ def two_shapes_that_broadcast() -> st.SearchStrategy[tuple[tuple[int, ...], ...]
 
 
 def two_shapes_that_matmul() -> st.SearchStrategy[tuple[tuple[int, ...], ...]]:
-    """Make two shapes that `@` can multiply, like (2, 3) and (3, 4), maybe with a batch in front."""
-    # Our `@` is for tables (2-D and up), as its docstring says, so plain
-    # 1-D vectors are not made here.
+    """Make two shapes that `@` can multiply, like (2, 3) and (3, 4), (3,) and (3, 4), or (3,) and (3,)."""
+    # The `?` lets either side be a plain 1-D vector, as numpy's matmul allows;
+    # a batch may still sit in front of any side that is a table.
     return hnp.mutually_broadcastable_shapes(
-        signature="(m,n),(n,p)->(m,p)", max_dims=MAX_DIMS, max_side=MAX_SIDE
+        signature="(m?,n),(n,p?)->(m?,p?)", max_dims=MAX_DIMS, max_side=MAX_SIDE
     ).map(operator.attrgetter("input_shapes"))
 
 
@@ -134,7 +134,7 @@ def two_input_problems(draw: st.DrawFn) -> tuple[Tensor, Tensor, Tensor]:
 
 @st.composite
 def matmul_problems(draw: st.DrawFn) -> tuple[Tensor, Tensor, Tensor]:
-    """Make two tables `@` can multiply, plus a weight for every number of the answer."""
+    """Make two vectors or tables `@` can multiply, plus a weight for every number of the answer."""
     a_shape, b_shape = draw(two_shapes_that_matmul())
     a = draw(tensors(a_shape, small_numbers()))
     b = draw(tensors(b_shape, small_numbers()))
@@ -251,6 +251,7 @@ def model_configs(vocab_size: int) -> st.SearchStrategy[ModelConfig]:
                 "embed_dim": st.sampled_from([2, 4]),
                 "num_heads": st.sampled_from([1, 2]),
                 "num_layers": st.integers(min_value=1, max_value=2),
+                "dropout": st.sampled_from([0.0, 0.25, 0.5]),
             }
         ),
     )
@@ -262,10 +263,15 @@ def any_float64() -> st.SearchStrategy[float]:
 
 
 @st.composite
-def texts_and_recipes(draw: st.DrawFn) -> tuple[str, ModelConfig]:
-    """Make a tokenizer's training text, and a small model recipe card that fits its alphabet."""
-    text = draw(st.text(min_size=1, max_size=MAX_ALPHABET))
-    return text, draw(model_configs(len(set(text))))
+def tokenizers_and_recipes(draw: st.DrawFn) -> tuple[CharTokenizer | BPETokenizer, ModelConfig]:
+    """Make a character or BPE tokenizer, and a small model recipe card that fits its vocabulary."""
+    tokenizer: CharTokenizer | BPETokenizer
+    if draw(st.booleans()):
+        tokenizer = BPETokenizer()
+        tokenizer.train(draw(repetitive_texts()), draw(merge_counts()))
+    else:
+        tokenizer = CharTokenizer(draw(st.text(min_size=1, max_size=MAX_ALPHABET)))
+    return tokenizer, draw(model_configs(tokenizer.vocab_size))
 
 
 def weight_values() -> st.SearchStrategy[list[float]]:
@@ -456,10 +462,11 @@ def test_bpe_round_trip(text_and_msg: tuple[str, str], merges: int) -> None:
 
 @given(text_and_message(repetitive_texts()), merge_counts())
 def test_token_numbers_fit_the_vocabulary(text_and_msg: tuple[str, str], merges: int) -> None:
-    """Every number BPE hands out is between 0 and vocab_size - 1, so the model can look it up."""
+    """Every number BPE hands out is between 0 and vocab_size - 1, and no token appears twice."""
     text, message = text_and_msg
     tokenizer = BPETokenizer()
     tokenizer.train(text, num_merges=merges)
+    assert tokenizer.vocab_size == len(tokenizer.base_chars) + len(tokenizer.merges)
     for number in tokenizer.encode(message):
         assert 0 <= number < tokenizer.vocab_size
 
@@ -467,19 +474,23 @@ def test_token_numbers_fit_the_vocabulary(text_and_msg: tuple[str, str], merges:
 # --- Checkpoints: save, load, and get the same model back ---------------------
 
 
-@given(text_and_recipe=texts_and_recipes(), weights=weight_values())
+@given(tokenizer_and_recipe=tokenizers_and_recipes(), weights=weight_values())
 def test_checkpoint_round_trip(
-    text_and_recipe: tuple[str, ModelConfig], weights: list[float]
+    tokenizer_and_recipe: tuple[CharTokenizer | BPETokenizer, ModelConfig], weights: list[float]
 ) -> None:
-    """Saving a model and loading it back gives the same recipe, alphabet and every weight, bit for bit."""
-    text, recipe = text_and_recipe
-    model, tokenizer = filled_model(recipe, weights), CharTokenizer(text)
+    """Saving a model and loading it back gives the same recipe, tokenizer and every weight, bit for bit."""
+    tokenizer, recipe = tokenizer_and_recipe
+    model = filled_model(recipe, weights)
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / "model.npz"
         save(path, model, tokenizer)
         reloaded, reloaded_tokenizer = load(path)
     assert repr(reloaded.config()) == repr(model.config())
+    assert type(reloaded_tokenizer) is type(tokenizer)
     assert reloaded_tokenizer.stoi == tokenizer.stoi
+    if isinstance(tokenizer, BPETokenizer):
+        assert isinstance(reloaded_tokenizer, BPETokenizer)
+        assert reloaded_tokenizer.merges == tokenizer.merges
     for before, after in zip(model.parameters(), reloaded.parameters(), strict=True):
         assert after.data.dtype == before.data.dtype
         assert after.data.shape == before.data.shape
@@ -524,7 +535,7 @@ def test_one_input_gradients_match_nudging(
 
 @given(problem=matmul_problems())
 def test_matmul_gradients_match_nudging(problem: tuple[Tensor, Tensor, Tensor]) -> None:
-    """For `a @ b` on any tables that fit, batches included, backward() matches the measured slope."""
+    """For `a @ b` on any vectors or tables that fit, batches included, backward() matches the measured slope."""
     a, b, weights = problem
     assert_gradients_match(lambda: (a @ b) * weights, a, b)
 

@@ -16,12 +16,12 @@ from pyllm.data import PEBBLE_CHECKPOINT, POKEMON_CHECKPOINT
 from pyllm.generate import generate
 from pyllm.models import LanguageModel
 from pyllm.pebble import referee as pebble_referee
-from pyllm.tokenizer import CharTokenizer
+from pyllm.tokenizer import Tokenizer
 
-_CACHE: dict[str, tuple[LanguageModel, CharTokenizer]] = {}
+_CACHE: dict[str, tuple[LanguageModel, Tokenizer]] = {}
 
 
-def _load_cached(path: Path) -> tuple[LanguageModel, CharTokenizer]:
+def _load_cached(path: Path) -> tuple[LanguageModel, Tokenizer]:
     """Load a checkpoint once and remember it, so later calls are instant."""
     key = str(path)
     if key not in _CACHE:

@@ -1,6 +1,10 @@
 """Tests for bpe."""
 
-from pyllm.tokenizer.bpe import BPETokenizer
+from collections import Counter
+
+import pytest
+
+from pyllm.tokenizer.bpe import BPETokenizer, _best_pair
 
 
 def test_bpe_roundtrip():
@@ -33,3 +37,22 @@ def test_bpe_learns_most_frequent_pair_first():
     tok.train("ababab", num_merges=1)
     # the first (and only) merge should be the pair ('a', 'b')
     assert tok.merges[0] == ("a", "b")
+
+
+def test_from_merges_refuses_two_merges_that_make_the_same_token():
+    """(ab, c) and (a, bc) both make "abc"; a tokenizer must never hold one token twice."""
+    merges = [("a", "b"), ("b", "c"), ("ab", "c"), ("a", "bc")]
+    with pytest.raises(ValueError, match="'abc'"):
+        BPETokenizer.from_merges(["a", "b", "c"], merges)
+
+
+def test_training_never_picks_a_pair_that_makes_a_known_token():
+    """Training skips a pair whose glued token already exists and takes the next best."""
+    pairs = Counter({("a", "bc"): 5, ("c", "a"): 3})
+    assert _best_pair(pairs, known={"a", "b", "c", "bc", "abc"}) == ("c", "a")
+
+
+def test_training_stops_when_only_known_tokens_are_left():
+    """If every common pair would remake a known token, there is nothing left to learn."""
+    pairs = Counter({("a", "bc"): 5})
+    assert _best_pair(pairs, known={"a", "b", "c", "bc", "abc"}) is None

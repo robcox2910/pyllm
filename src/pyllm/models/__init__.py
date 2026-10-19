@@ -36,6 +36,8 @@ def build_model(config: ModelConfig, rng: np.random.Generator | None = None) -> 
             embed_dim=config["embed_dim"],
             num_heads=config["num_heads"],
             num_layers=config["num_layers"],
+            # Checkpoints from before dropout was saved used the default (off).
+            dropout=config.get("dropout", 0.0),
             rng=rng,
         )
     msg = f"unknown model kind: {kind!r}"

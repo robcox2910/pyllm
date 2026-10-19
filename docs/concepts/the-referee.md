@@ -68,15 +68,15 @@ $ uv run pyllm pebble --seed 7 --score                # the model on its own
 parse rate: 0.0% of 1 programs
 
 $ uv run pyllm pebble --seed 7 --constrained --score  # with the referee
-let value = step()
-print(14 - 82)
-for i in range(4) {
-    x = b
-    while 57 >= 48 and 83 != a {
-        print(compute())
-        let z = helper()
+let result = a * 15 - 89
+fn helper(n) {
+    let result = 79 + 91 * (z - total)
+    if not 28 > n or y < n {
+        let total = total - 69 + n
     }
 }
+let c = make(43, a * 67)
+total = 31 % 16
 
 parse rate: 100.0% of 1 programs
 ```
