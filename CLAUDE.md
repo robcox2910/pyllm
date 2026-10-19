@@ -63,6 +63,10 @@
 - **Regenerating the Pebble corpus.** `src/pyllm/data/pebble_corpus.txt` is generated, not
   hand-written: `uv run python scripts/build_pebble_corpus.py` grows random valid programs
   (`pebble/generator.py`), mixes in snippets harvested from a sibling `../pebble-lang/docs`
-  checkout (kept only if they parse) and canonicalises everything with Pebble's formatter. The
-  same recipe is available as `pyllm gen-corpus`. It needs the optional `pebble` extra
+  checkout (kept only if they parse) and canonicalises everything with Pebble's formatter. Use
+  `--pebble-docs PATH` to harvest from elsewhere; if the docs folder is missing the script stops
+  with an error (it never silently drops the snippets) unless you pass `--no-harvest`. The
+  bundled corpus is built *with* the snippets, so only use `--no-harvest` for experiments. A
+  similar recipe is available as `pyllm gen-corpus --harvest PATH --canonical` (which also fails
+  on a missing `--harvest` folder). It needs the optional `pebble` extra
   (`uv sync --all-extras`). Retrain `pebble.npz` afterwards.

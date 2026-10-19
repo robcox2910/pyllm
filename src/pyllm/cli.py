@@ -123,6 +123,10 @@ def run_gen_corpus(args: argparse.Namespace, out: Callable[[str], None] = print)
     """Build-time helper: grow a synthetic Pebble corpus to a file."""
     rng = np.random.default_rng(args.seed)
     harvest = [Path(args.harvest)] if args.harvest else []
+    for folder in harvest:
+        if not folder.is_dir():
+            out(f"(no docs folder to harvest at {folder}; check the --harvest path)")
+            return 2
     text = build_corpus(
         rng,
         num_generated=args.num_generated,

@@ -52,3 +52,18 @@ def test_constrained_pebble_rejects_a_rule_breaking_prompt(capsys: pytest.Captur
     out = capsys.readouterr().out
     assert code == 2
     assert "referee" in out.lower()
+
+
+def test_gen_corpus_missing_harvest_folder_fails_loudly(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    """Gen corpus refuses a --harvest folder that does not exist (no silent skip)."""
+    dest = tmp_path / "corpus.txt"
+    missing = tmp_path / "no-such-docs"
+    code = main(
+        ["gen-corpus", "--num-generated", "2", "--harvest", str(missing), "--out", str(dest)]
+    )
+    out = capsys.readouterr().out
+    assert code == 2
+    assert "no-such-docs" in out
+    assert not dest.exists()
