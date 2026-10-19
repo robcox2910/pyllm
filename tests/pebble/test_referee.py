@@ -154,10 +154,21 @@ def test_everyday_nesting_is_still_fine():
 
 # Pebble refuses anything nested more than 100 levels deep, and it counts
 # every statement, every operator's right-hand side, every minus sign, bracket,
-# call argument and `not`. The referee must count at least as much.
+# call argument and `not`. Since pebble v0.2.2 it also counts every operator in
+# a flat chain like `1 + 1 + 1` as one more level, until the whole chain is read.
+# The referee must count at least as much.
+LONG_CHAIN = 98
 PEBBLE_DEEP_PROGRAMS = {
     "plus minus bracket": "let a = " + "1 + -(" * 33 + "1" + ")" * 33,
     "every operator": "let x = " + "a or b and c == d + e * -(" * 15 + "1" + ")" * 15,
+    "long plus chain": "let a = 1" + " + 1" * LONG_CHAIN,
+    "long or chain": "let a = a" + " or a" * LONG_CHAIN,
+    "long times chain": "print(2" + " * 2" * LONG_CHAIN + ")",
+    "chain across levels": "let a = "
+    + " * ".join(["a"] * 25)
+    + " + a" * 25
+    + " and a" * 25
+    + " or a" * 25,
 }
 
 
@@ -168,6 +179,23 @@ def test_nesting_counts_everything_pebble_counts(text: str) -> None:
     """Programs Pebble calls too deeply nested get the whistle from the referee too."""
     assert not viable(text)
     assert not complete(text)
+
+
+@pytest.mark.parametrize(
+    "text", list(PEBBLE_DEEP_PROGRAMS.values()), ids=list(PEBBLE_DEEP_PROGRAMS)
+)
+def test_pebble_really_refuses_the_deep_programs(text: str) -> None:
+    """Pebble itself calls every program above too deeply nested (keeps the list honest)."""
+    pytest.importorskip("pebble")
+    from pebble import PebbleError, check
+
+    with pytest.raises(PebbleError, match="nested too deeply"):
+        check(text)
+
+
+def test_an_everyday_operator_chain_is_still_fine():
+    """A chain of a few dozen operators is still finished, valid Pebble."""
+    assert complete("let a = 1" + " + 1" * 40)
 
 
 def test_nesting_right_at_the_limit_is_fine():

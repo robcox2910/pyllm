@@ -268,8 +268,13 @@ def _open(self) -> None:
 
 A fixed limit gives the same answer every time, wherever it's called
 from. Pebble has a limit too: 100 levels, counting the same kinds of
-step. The referee counts at least everything Pebble counts and stops at
-90, so anything it accepts is never too deep for Pebble. The crash also became plain example tests
+step. Since pebble v0.2.2 it also counts every operator in a flat chain
+like `1 + 1 + 1`: each one holds a level open until the whole chain is
+read, so `1` followed by a hundred `+ 1`s is too deep even with no
+brackets at all. The referee does the same (`_chain_step()` opens a level
+that only closes when the chain's `_deeper()` finishes). It counts at
+least everything Pebble counts and stops at 90, so anything it accepts is
+never too deep for Pebble. The crash also became plain example tests
 in `tests/pebble/test_referee.py`:
 
 ```python
