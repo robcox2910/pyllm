@@ -18724,6 +18724,15 @@ print((2 ** 2) ** 3)  # prints: 64
 
 print(2 ** -1)  # prints: 0.5   (same as 1 / 2)
 
+let x = 3
+try {
+    while true {
+        x = x * x
+    }
+} catch e {
+    print(e)  # prints: Number is too large (more than 1,000,000 bits)
+}
+
 print(-2 ** 2)  # prints: -4   (power first, then negate)
 print(-2 ** 2)  # prints: 4    (negate first, then power)
 
