@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from pyllm.pebble.harvest import harvest_dir, harvest_text
 
 _MD = """# Title
@@ -45,3 +47,10 @@ def test_harvest_dir_reads_markdown_files(tmp_path: Path):
     (tmp_path / "c.txt").write_text("```pebble\nlet c = 3\n```\n", encoding="utf-8")
     blocks = harvest_dir(tmp_path)
     assert blocks == ["let a = 1", "let b = 2"]  # only .md, sorted
+
+
+def test_harvest_dir_missing_folder_fails_loudly(tmp_path: Path):
+    """Harvest dir on a folder that does not exist raises instead of finding nothing."""
+    missing = tmp_path / "no-such-docs"
+    with pytest.raises(FileNotFoundError, match="no-such-docs"):
+        harvest_dir(missing)

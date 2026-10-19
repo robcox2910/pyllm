@@ -15,6 +15,11 @@ Pebble's documentation is full of small, hand-written code snippets. We scoop
 every one of them out (the `harvest` step) — genuine, idiomatic Pebble written by
 a human. There aren't many, but they're gold: they show how real Pebble *feels*.
 
+The build script (`scripts/build_pebble_corpus.py`) looks for Pebble's docs in a
+`pebble-lang` folder next to `pyllm`, or wherever `--pebble-docs PATH` points. If
+the folder isn't there it stops with an error instead of quietly leaving the gold
+out; pass `--no-harvest` if you really do want generated programs only.
+
 ## 2. Generate — grow unlimited fresh examples
 
 This is the key trick. We wrote a little robot (`generator.py`) that builds Pebble

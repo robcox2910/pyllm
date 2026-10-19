@@ -90,6 +90,74 @@ def sample_next(
     raise RuntimeError(msg)
 
 
+def _next_scores(model: LanguageModel, context: list[int]) -> Array:
+    """Ask the model for a score for every possible next token, given the context so far."""
+    window = context[-model.block_size :]
+    if model.mode == "single":
+        # MLP needs exactly block_size tokens; left-pad short windows.
+        if len(window) < model.block_size:
+            window = [0] * (model.block_size - len(window)) + window
+    elif not window:
+        # Sequence models with an empty prompt need a seed token to read.
+        window = [0]
+    x = np.array([window], dtype=np.int64)
+    logits = model(x).data
+    return logits[0, -1] if logits.ndim == _SEQUENCE_DIMS else logits[0]
+
+
+def _legal_moves(referee: Referee, tokenizer: Tokenizer, so_far: str) -> Callable[[int], bool]:
+    """Make the referee's yes/no check for each possible next token after `so_far`."""
+
+    def legal(token: int) -> bool:
+        return referee.viable(so_far + tokenizer.decode([token]))
+
+    return legal
+
+
+def _write_one_try(
+    model: LanguageModel,
+    tokenizer: Tokenizer,
+    prompt: str,
+    max_new_tokens: int,
+    temperature: float,
+    top_k: int | None,
+    rng: np.random.Generator,
+    referee: Referee,
+) -> str | None:
+    """Write past the prompt under the referee; the text up to the last new finish, or None.
+
+    Only a finish *after* the prompt counts: the prompt on its own (say, a lone
+    `# comment` line) is not an answer. If the budget runs out before anything
+    new has finished -- usually mid-statement, or inside an unclosed string or
+    block -- we play overtime: up to `max_new_tokens` more characters, picked
+    greedily (the model's most confident legal guess), stopping at the first
+    finished point.
+    """
+    context = list(tokenizer.encode(prompt))
+    text = prompt
+    finished_at: int | None = None
+    for step in range(2 * max_new_tokens):
+        in_overtime = step >= max_new_tokens
+        if in_overtime and finished_at is not None:
+            break
+        token = sample_next(
+            _next_scores(model, context),
+            temperature=0.0 if in_overtime else temperature,
+            top_k=top_k,
+            rng=rng,
+            allowed=_legal_moves(referee, tokenizer, text),
+        )
+        context.append(token)
+        text += tokenizer.decode([token])
+        if referee.complete(text):
+            finished_at = len(text)
+    return text[:finished_at] if finished_at is not None else None
+
+
+_TRIES = 4
+"""How many fresh starts a refereed generation gets before giving up on new code."""
+
+
 def generate(
     model: LanguageModel,
     tokenizer: Tokenizer,
@@ -111,7 +179,11 @@ def generate(
     Pass a `referee` (anything with `viable(text)` and `complete(text)`, such as
     `pyllm.pebble.referee`) and every character must be a legal move. We remember
     the last moment the text was a finished program and, when we run out of
-    characters, cut back to it -- so you never get half a program.
+    characters, cut back to it -- so you never get half a program. A finished
+    prompt doesn't count: if nothing new has finished when the budget runs out,
+    we play overtime (see `_write_one_try`) and, failing that, start again from
+    the prompt, up to `_TRIES` times. Only if every try fails do we hand back the
+    prompt (when it is itself finished) or nothing.
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -121,36 +193,21 @@ def generate(
         )
         raise ValueError(msg)
     model.eval()
+    if referee is not None:
+        for _ in range(_TRIES):
+            finished = _write_one_try(
+                model, tokenizer, prompt, max_new_tokens, temperature, top_k, rng, referee
+            )
+            if finished is not None:
+                return finished
+        # Nothing new ever finished: never hand back half a program.
+        return prompt if referee.complete(prompt) else ""
     context = list(tokenizer.encode(prompt))
     text = prompt
-    finished_at = len(text) if referee is not None and referee.complete(text) else None
     for _ in range(max_new_tokens):
-        window = context[-model.block_size :]
-        if model.mode == "single":
-            # MLP needs exactly block_size tokens; left-pad short windows.
-            if len(window) < model.block_size:
-                window = [0] * (model.block_size - len(window)) + window
-        elif not window:
-            # Sequence models with an empty prompt need a seed token to read.
-            window = [0]
-        x = np.array([window], dtype=np.int64)
-        logits = model(x).data
-        last_row = logits[0, -1] if logits.ndim == _SEQUENCE_DIMS else logits[0]
-        allowed: Callable[[int], bool] | None = None
-        if referee is not None:
-
-            def legal(token: int, so_far: str = text) -> bool:
-                return referee.viable(so_far + tokenizer.decode([token]))
-
-            allowed = legal
         token = sample_next(
-            last_row, temperature=temperature, top_k=top_k, rng=rng, allowed=allowed
+            _next_scores(model, context), temperature=temperature, top_k=top_k, rng=rng
         )
         context.append(token)
         text += tokenizer.decode([token])
-        if referee is not None and referee.complete(text):
-            finished_at = len(text)
-    if referee is None:
-        return text
-    # No finished program at all? Hand back nothing rather than half a program.
-    return text[:finished_at] if finished_at is not None else ""
+    return text

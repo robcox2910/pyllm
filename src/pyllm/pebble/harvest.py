@@ -20,8 +20,16 @@ def harvest_text(markdown: str) -> list[str]:
 
 
 def harvest_dir(path: str | PathLike[str]) -> list[str]:
-    """Return every ```pebble block across all *.md files under `path` (sorted)."""
+    """Return every ```pebble block across all *.md files under `path` (sorted).
+
+    A folder that isn't there raises `FileNotFoundError` rather than quietly
+    finding nothing -- otherwise a typo'd path would silently shrink the corpus.
+    """
+    folder = Path(path)
+    if not folder.is_dir():
+        msg = f"no docs folder to harvest at {folder}"
+        raise FileNotFoundError(msg)
     blocks: list[str] = []
-    for md in sorted(Path(path).rglob("*.md")):
+    for md in sorted(folder.rglob("*.md")):
         blocks.extend(harvest_text(md.read_text(encoding="utf-8")))
     return blocks
