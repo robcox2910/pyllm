@@ -44,6 +44,14 @@ remembers "the program was finished here".
 When the model runs out of characters mid-way through the next program, we cut
 the text back to the last moment it was complete. You never get half a program.
 
+But your prompt doesn't count as an answer. Ask for `# add two numbers⏎` and that
+comment line is already a complete program on its own. If the model is still
+half-way through its first line of code when it runs out of characters (stuck in
+a long string, say), cutting back would hand you just the comment. So instead the
+game goes into **overtime**: the model keeps going, taking its single most
+confident legal guess each time, until something new is finished. If even that
+doesn't work, we start again from the prompt (up to four tries).
+
 ## How the referee reads code
 
 It's a small *recursive-descent parser*: one little function per grammar shape

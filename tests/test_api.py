@@ -57,3 +57,38 @@ def test_constrained_pebble_parses_under_the_real_parser():
         programs += [p for p in text.split("\n\n") if p.strip()]
     assert programs
     assert parse_rate(programs) == 1.0
+
+
+def _has_code(text: str) -> bool:
+    """Say whether `text` has at least one line that is real code, not a comment."""
+    return any(line.strip() and not line.lstrip().startswith("#") for line in text.splitlines())
+
+
+def test_constrained_pebble_under_a_comment_prompt_writes_real_code():
+    """A plain-English request pinned as a comment still gets code written under it.
+
+    This is the prompt PyStack's `llm.write_pebble` sends. The comment alone is a
+    finished program, so when the budget ran out mid-statement generation used to
+    cut all the way back to it and hand back no code at all (seeds 0 and 2).
+    """
+    prompt = "# add two numbers\n"
+    for seed in range(6):
+        text = generate_pebble(prompt=prompt, max_new_tokens=120, seed=seed, constrained=True)
+        assert text.startswith(prompt)
+        assert _has_code(text[len(prompt) :]), (seed, text)
+
+
+def test_constrained_pebble_under_a_comment_prompt_parses():
+    """The code written under a comment prompt parses under Pebble's real parser."""
+    import pytest
+
+    pytest.importorskip("pebble")
+    from pyllm.pebble import is_valid
+
+    for seed in range(6):
+        text = generate_pebble(
+            prompt="# add two numbers\n", max_new_tokens=120, seed=seed, constrained=True
+        )
+        programs = [p for p in text.split("\n\n") if p.strip()]
+        assert programs
+        assert all(is_valid(p) for p in programs), (seed, text)

@@ -222,3 +222,38 @@ def test_unfinished_prompt_with_no_finished_point_returns_nothing():
     model, tokenizer = _tiny_gpt()
     text = generate(model, tokenizer, prompt="a", max_new_tokens=4, referee=NeverDone())
     assert text == ""  # never hand back half a program, not even the prompt
+
+
+class OnlyAsInSixes(OnlyAs):
+    """A toy referee whose programs are finished only at multiples of six letters."""
+
+    def complete(self, text: str) -> bool:
+        """Complete."""
+        return self.viable(text) and len(text) % 6 == 0
+
+
+def test_budget_running_out_mid_program_plays_overtime_instead_of_returning_the_prompt():
+    """An already-finished prompt is not an answer: keep going until something new finishes."""
+    model, tokenizer = _tiny_gpt()
+    # The empty prompt counts as finished, and 4 letters is not enough to reach 6.
+    text = generate(
+        model,
+        tokenizer,
+        max_new_tokens=4,
+        rng=np.random.default_rng(0),
+        referee=OnlyAsInSixes(),
+    )
+    assert text == "aaaaaa"
+
+
+def test_finishing_within_budget_does_not_play_overtime():
+    """When something new finished inside the budget, the budget is still the cap."""
+    model, tokenizer = _tiny_gpt()
+    text = generate(
+        model,
+        tokenizer,
+        max_new_tokens=8,
+        rng=np.random.default_rng(0),
+        referee=OnlyAsInSixes(),
+    )
+    assert text == "aaaaaa"
