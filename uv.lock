@@ -634,8 +634,8 @@ wheels = [
 
 [[package]]
 name = "pebble-lang"
-version = "0.2.2"
-source = { git = "https://github.com/robcox2910/pebble-lang?tag=v0.2.2#7770162524deba9197ac252243949f60e732d101" }
+version = "0.2.3"
+source = { git = "https://github.com/robcox2910/pebble-lang?tag=v0.2.3#3372237c5a45fd7613e1e2aab1a1525130d431d6" }
 
 [[package]]
 name = "pip"
@@ -790,7 +790,7 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.170" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "numpy", specifier = ">=2.1" },
-    { name = "pebble-lang", marker = "extra == 'pebble'", git = "https://github.com/robcox2910/pebble-lang?tag=v0.2.2" },
+    { name = "pebble-lang", marker = "extra == 'pebble'", git = "https://github.com/robcox2910/pebble-lang?tag=v0.2.3" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.400" },
