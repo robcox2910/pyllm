@@ -112,7 +112,7 @@ def run_pebble(args: argparse.Namespace, out: Callable[[str], None] = print) -> 
     out(text)
     if args.score:
         if not PEBBLE_AVAILABLE:
-            out("(install pebble-lang to score validity: uv sync --all-extras)")
+            out("(install fromscratch-pebble to score validity: uv sync --all-extras)")
         else:
             programs = [p for p in text.split("\n\n") if p.strip()]
             out(f"parse rate: {parse_rate(programs):.1%} of {len(programs)} programs")

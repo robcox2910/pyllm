@@ -37,7 +37,7 @@ def canonicalize(source: str) -> str:
     try:
         from pebble import format_source  # noqa: PLC0415 - optional dependency
     except ImportError as exc:  # pragma: no cover - environment-dependent
-        msg = "Canonicalizing needs pebble-lang. Install it: `uv sync --all-extras`."
+        msg = "Canonicalizing needs fromscratch-pebble. Install it: `uv sync --all-extras`."
         raise RuntimeError(msg) from exc
     return format_source(source)
 
