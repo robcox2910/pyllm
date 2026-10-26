@@ -90,7 +90,7 @@ From Python: `generate_pebble(constrained=True)`. See
 [`docs/concepts/the-referee.md`](docs/concepts/the-referee.md).
 
 Grow a fresh synthetic corpus with `uv run pyllm gen-corpus`. Live scoring needs
-the optional `pebble-lang` dependency (`uv sync --all-extras`); generation and
+the optional `fromscratch-pebble` dependency (`uv sync --all-extras`); generation and
 training work without it. See [`docs/concepts/grow-your-own-data.md`](docs/concepts/grow-your-own-data.md).
 
 ## See how text becomes tokens
@@ -123,9 +123,9 @@ own data.
 
 ## Developing alongside a sibling
 
-PyLLM uses a released version of [Pebble](https://github.com/robcox2910/pebble-lang),
-pinned to a tag in `pyproject.toml` (`[tool.uv.sources]`). To try an unreleased
-Pebble change, install your local checkout over the pinned one:
+PyLLM uses a released version of [Pebble](https://github.com/robcox2910/pebble-lang)
+from PyPI (`fromscratch-pebble`, the optional `pebble` extra). To try an
+unreleased Pebble change, install your local checkout over the released one:
 
 ```bash
 uv pip install -e ../pebble-lang

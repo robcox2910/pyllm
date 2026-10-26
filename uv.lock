@@ -266,6 +266,15 @@ wheels = [
 ]
 
 [[package]]
+name = "fromscratch-pebble"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3c/47/252c7ac1f6fc612be7b801a946674a15af8a6a5e54c7a30e597d735a66fc/fromscratch_pebble-0.3.0.tar.gz", hash = "sha256:544cb23ecfe239933407415fe9059ec78c69a24e6a8da7d430e977867934a362", size = 408595, upload-time = "2026-10-26T11:45:07.526Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/56/159c6250b4c28fe7fa22fea254b2635c83a8d64099ec87d042ed59c85c37/fromscratch_pebble-0.3.0-py3-none-any.whl", hash = "sha256:d7725f2b538dbe0bceee5204ea2dcc9576de98a4c4c32da4e489adf6c04d93c1", size = 110491, upload-time = "2026-10-26T11:45:06.175Z" },
+]
+
+[[package]]
 name = "fromscratch-pyllm"
 source = { editable = "." }
 dependencies = [
@@ -287,16 +296,16 @@ docs = [
     { name = "mkdocs-material" },
 ]
 pebble = [
-    { name = "pebble-lang" },
+    { name = "fromscratch-pebble" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "commitizen", marker = "extra == 'dev'", specifier = ">=4.4.0" },
+    { name = "fromscratch-pebble", marker = "extra == 'pebble'", specifier = ">=0.3.0" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.170" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "numpy", specifier = ">=2.1" },
-    { name = "pebble-lang", marker = "extra == 'pebble'", git = "https://github.com/robcox2910/pebble-lang?tag=v0.2.3" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.400" },
@@ -672,11 +681,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6f
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
 ]
-
-[[package]]
-name = "pebble-lang"
-version = "0.2.3"
-source = { git = "https://github.com/robcox2910/pebble-lang?tag=v0.2.3#3372237c5a45fd7613e1e2aab1a1525130d431d6" }
 
 [[package]]
 name = "pip"

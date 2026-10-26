@@ -16,7 +16,7 @@ def _require_pebble() -> tuple[Callable[[str], None], type[Exception]]:
         from pebble import PebbleError, check  # noqa: PLC0415 - optional dependency
     except ImportError as exc:  # pragma: no cover - environment-dependent
         msg = (
-            "Live Pebble scoring needs pebble-lang. Install the optional extra: "
+            "Live Pebble scoring needs fromscratch-pebble. Install the optional extra: "
             "`uv sync --all-extras`."
         )
         raise RuntimeError(msg) from exc
