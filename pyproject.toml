@@ -1,5 +1,5 @@
 [project]
-name = "pyllm"
+name = "fromscratch-pyllm"
 dynamic = ["version"]
 description = "An educational large language model built from scratch in Python"
 readme = "README.md"
