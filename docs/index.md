@@ -13,6 +13,14 @@ dependency is numpy (for fast array math) — the autograd engine, neural-net
 layers, attention, the Transformer, the tokenizer, the optimizer, the training
 loop, and sampling are all ours.
 
+## Install
+
+```bash
+pip install fromscratch-pyllm
+```
+
+Or get the whole series at once with `pip install fromscratch-pystack`. To read the code or run the tests, clone it from [GitHub](https://github.com/robcox2910/pyllm).
+
 ## Quick Start
 
 ```bash
