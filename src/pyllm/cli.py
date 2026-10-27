@@ -139,16 +139,50 @@ def run_gen_corpus(args: argparse.Namespace, out: Callable[[str], None] = print)
     return 0
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point for `pyllm`: no subcommand generates; `train`/`tokenize` too."""
+# Each command's own defaults for the options that can sit on either side of
+# the subcommand. They are filled in after parsing, so a value you typed before
+# the subcommand (``pyllm --seed 7 pebble``) is never overwritten.
+_GENERATE_DEFAULTS: dict[str, object] = {
+    "prompt": "",
+    "max_new_tokens": 100,
+    "temperature": 0.8,
+    "top_k": None,
+    "checkpoint": None,
+    "seed": None,
+}
+_PEBBLE_DEFAULTS: dict[str, object] = {
+    **_GENERATE_DEFAULTS,
+    "prompt": "let ",
+    "max_new_tokens": 200,
+    "temperature": 0.7,
+}
+_SEED_ONLY_DEFAULTS: dict[str, object] = {"seed": None}
+_UNSET = argparse.SUPPRESS
+
+
+def _add_generation_options(parser: argparse.ArgumentParser) -> None:
+    """Add the sampling options shared by plain generation and `pebble`."""
+    parser.add_argument("--prompt", default=_UNSET)
+    parser.add_argument("--max-new-tokens", type=int, default=_UNSET)
+    parser.add_argument("--temperature", type=float, default=_UNSET)
+    parser.add_argument("--top-k", type=int, default=_UNSET)
+    parser.add_argument("--checkpoint", default=_UNSET)
+    parser.add_argument("--seed", type=int, default=_UNSET)
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Read the command line, with each command's defaults for anything left out.
+
+    Args:
+        argv: The arguments (without the program name), or None for ``sys.argv``.
+
+    Returns:
+        The parsed options, including ``func``, the command to run.
+
+    """
     parser = argparse.ArgumentParser(prog="pyllm", description="A tiny LLM you can read.")
-    parser.set_defaults(func=run_generate)
-    parser.add_argument("--prompt", default="")
-    parser.add_argument("--max-new-tokens", type=int, default=100)
-    parser.add_argument("--temperature", type=float, default=0.8)
-    parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--checkpoint", default=None)
-    parser.add_argument("--seed", type=int, default=None)
+    parser.set_defaults(func=run_generate, command_defaults=_GENERATE_DEFAULTS)
+    _add_generation_options(parser)
 
     sub = parser.add_subparsers()
 
@@ -159,21 +193,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_train.add_argument("--batch-size", type=int, default=32)
     p_train.add_argument("--lr", type=float, default=3e-3)
     p_train.add_argument("--out", default="model.npz")
-    p_train.add_argument("--seed", type=int, default=None)
-    p_train.set_defaults(func=run_train)
+    p_train.add_argument("--seed", type=int, default=_UNSET)
+    p_train.set_defaults(func=run_train, command_defaults=_SEED_ONLY_DEFAULTS)
 
     p_tok = sub.add_parser("tokenize", help="show how text becomes tokens")
     p_tok.add_argument("--text", required=True)
     p_tok.add_argument("--corpus", default=None)
-    p_tok.set_defaults(func=run_tokenize)
+    p_tok.set_defaults(func=run_tokenize, command_defaults={})
 
     p_pebble = sub.add_parser("pebble", help="write Pebble code (the flagship demo)")
-    p_pebble.add_argument("--prompt", default="let ")
-    p_pebble.add_argument("--max-new-tokens", type=int, default=200)
-    p_pebble.add_argument("--temperature", type=float, default=0.7)
-    p_pebble.add_argument("--top-k", type=int, default=None)
-    p_pebble.add_argument("--checkpoint", default=None)
-    p_pebble.add_argument("--seed", type=int, default=None)
+    _add_generation_options(p_pebble)
     p_pebble.add_argument(
         "--score", action="store_true", help="report what %% of the output parses"
     )
@@ -182,7 +211,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="let the grammar referee veto illegal characters (always valid code)",
     )
-    p_pebble.set_defaults(func=run_pebble)
+    p_pebble.set_defaults(func=run_pebble, command_defaults=_PEBBLE_DEFAULTS)
 
     p_corpus = sub.add_parser("gen-corpus", help="grow a synthetic Pebble corpus")
     p_corpus.add_argument("--num-generated", type=int, default=400)
@@ -195,8 +224,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="run each program through the Pebble formatter",
     )
     p_corpus.add_argument("--out", default="pebble_corpus.txt")
-    p_corpus.add_argument("--seed", type=int, default=None)
-    p_corpus.set_defaults(func=run_gen_corpus)
+    p_corpus.add_argument("--seed", type=int, default=_UNSET)
+    p_corpus.set_defaults(func=run_gen_corpus, command_defaults=_SEED_ONLY_DEFAULTS)
 
     args = parser.parse_args(argv)
+    for name, value in args.command_defaults.items():
+        if not hasattr(args, name):
+            setattr(args, name, value)
+    return args
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Entry point for `pyllm`: no subcommand generates; `train`/`tokenize` too."""
+    args = parse_args(argv)
     return args.func(args)
