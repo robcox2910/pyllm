@@ -51,10 +51,10 @@ Pick a rung on the teaching ladder (`bigram`, `mlp`, or `gpt`) and point it at
 any text file (defaults to the bundled Pokémon corpus):
 
 ```console
-$ uv run pyllm train --model gpt --steps 2000 --out mine.npz
-step 0: loss 3.31
+$ uv run pyllm train --model gpt --steps 2000 --seed 0 --out mine.npz
+step 0: loss 3.4070
 ...
-final loss 0.42; saved checkpoint to mine.npz
+final loss 0.2996; saved checkpoint to mine.npz
 
 $ uv run pyllm --checkpoint mine.npz --max-new-tokens 60
 ```
@@ -70,10 +70,10 @@ parser and reporting what percentage parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --temperature 0.5 --score
-let result = 62
+let total = n * (5 + n)
+        let a = 6
     }
-    if count < 47 {
-        let c = 51 + (83 + 32)
+    let a = result * (6 - result)
 ...
 parse rate: 0.0% of 1 programs
 ```
@@ -91,19 +91,16 @@ one. Same tiny brain — but now every program it returns parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --constrained --score
-let total = n * (63 - 99)
+let total = result + j * 3
 
-let result = c
-fount = 55 + (n - b) % (6 - b)
-
-parse rate: 100.0% of 2 programs
+parse rate: 100.0% of 1 programs
 ```
 
 From Python: `generate_pebble(constrained=True)`. See
 [`docs/concepts/the-referee.md`](https://github.com/robcox2910/pyllm/blob/main/docs/concepts/the-referee.md).
 
 Grow a fresh synthetic corpus with `uv run pyllm gen-corpus`. Live scoring needs
-the optional `pebble-lang` dependency (`uv sync --all-extras`); generation and
+the optional `fromscratch-pebble` dependency (`uv sync --all-extras`); generation and
 training work without it. See [`docs/concepts/grow-your-own-data.md`](https://github.com/robcox2910/pyllm/blob/main/docs/concepts/grow-your-own-data.md).
 
 ## See how text becomes tokens
@@ -136,9 +133,9 @@ own data.
 
 ## Developing alongside a sibling
 
-PyLLM uses a released version of [Pebble](https://github.com/robcox2910/pebble-lang),
-pinned to a tag in `pyproject.toml` (`[tool.uv.sources]`). To try an unreleased
-Pebble change, install your local checkout over the pinned one:
+PyLLM uses a released version of [Pebble](https://github.com/robcox2910/pebble-lang)
+from PyPI (`fromscratch-pebble`, the optional `pebble` extra). To try an
+unreleased Pebble change, install your local checkout over the released one:
 
 ```bash
 uv pip install -e ../pebble-lang
@@ -146,17 +143,18 @@ uv run --no-sync pytest
 ```
 
 Use `uv run --no-sync` while you do this: a plain `uv run` (like `uv sync`)
-puts the pinned release back, which is how you undo the override.
+puts the released version back, which is how you undo the override.
 
 ## Releasing
 
 1. Merge the change to `main`.
-2. Tag it: `git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+2. Release it: `gh release create vX.Y.Z --target main --generate-notes`
+   (or push a `vX.Y.Z` tag); the release workflow publishes it to PyPI.
    A change to the public API bumps the minor version (`v0.1.0` → `v0.2.0`);
    anything else bumps the patch (`v0.1.0` → `v0.1.1`).
 3. Projects that use PyLLM (like [PyStack](https://github.com/robcox2910/pystack))
-   upgrade by editing the tag in their `[tool.uv.sources]` and running
-   `uv lock --upgrade-package pyllm`, in a pull request so CI checks the pair.
+   upgrade by raising their `fromscratch-pyllm>=X.Y.Z` floor and running
+   `uv lock --upgrade-package fromscratch-pyllm`, in a pull request so CI checks the pair.
 
 ## PyLLM inside PyStack
 

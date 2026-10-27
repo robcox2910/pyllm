@@ -38,10 +38,10 @@ Pick a rung on the teaching ladder (`bigram`, `mlp`, or `gpt`) and point it at
 any text file (defaults to the bundled Pokémon corpus):
 
 ```console
-$ uv run pyllm train --model gpt --steps 2000 --out mine.npz
-step 0: loss 3.31
+$ uv run pyllm train --model gpt --steps 2000 --seed 0 --out mine.npz
+step 0: loss 3.4070
 ...
-final loss 0.42; saved checkpoint to mine.npz
+final loss 0.2996; saved checkpoint to mine.npz
 
 $ uv run pyllm --checkpoint mine.npz --max-new-tokens 60
 ```
@@ -57,10 +57,10 @@ parser and reporting what percentage parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --temperature 0.5 --score
-let result = 62
+let total = n * (5 + n)
+        let a = 6
     }
-    if count < 47 {
-        let c = 51 + (83 + 32)
+    let a = result * (6 - result)
 ...
 parse rate: 0.0% of 1 programs
 ```
@@ -78,12 +78,9 @@ one. Same tiny brain — but now every program it returns parses:
 
 ```console
 $ uv run pyllm pebble --seed 7 --constrained --score
-let total = n * (63 - 99)
+let total = result + j * 3
 
-let result = c
-fount = 55 + (n - b) % (6 - b)
-
-parse rate: 100.0% of 2 programs
+parse rate: 100.0% of 1 programs
 ```
 
 From Python: `generate_pebble(constrained=True)`. See
